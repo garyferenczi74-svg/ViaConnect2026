@@ -29,6 +29,12 @@ async function cardTextIsFullyVisible(page: Page) {
     if (!box || box.height < 1) continue;
     expect(box.y + box.height + 16).toBeLessThanOrEqual(tagline.y + 1);
     expect(box.y + box.height).toBeLessThanOrEqual(ticker.y);
+    const ctas = await page.getByTestId('hero-ctas').boundingBox();
+    expect(ctas).not.toBeNull();
+    if (ctas) {
+      expect(tagline.y + tagline.height).toBeLessThanOrEqual(ctas.y + 1);
+      expect(ctas.y + ctas.height).toBeLessThanOrEqual(ticker.y + 1);
+    }
 
     const texts = card.locator('h3, p');
     const textCount = await texts.count();
@@ -73,8 +79,9 @@ test.describe('landing hero short fold', () => {
       if (!tagline || !ticker) return;
       expect(tagline.y + tagline.height).toBeLessThanOrEqual(ticker.y - 1);
 
-      if (height >= 720) {
-        const viewportHeight = page.viewportSize()?.height ?? height;
+      const viewportHeight = page.viewportSize()?.height ?? height;
+      const heroHeight = await page.locator('.hero-screen').evaluate((el) => el.getBoundingClientRect().height);
+      if (heroHeight <= viewportHeight + 1) {
         expect(viewportHeight - (ticker.y + ticker.height)).toBeGreaterThanOrEqual(-1);
         expect(viewportHeight - (ticker.y + ticker.height)).toBeLessThanOrEqual(24);
       }

@@ -253,7 +253,7 @@ export function HeroPillars() {
       <div
         role="list"
         data-testid="hero-pillars-desktop-grid"
-        className="mt-[clamp(0.55rem,2vh,1.5rem)] hidden sm:grid sm:grid-cols-2 sm:gap-[clamp(0.45rem,1.2vh,0.75rem)] min-[1000px]:order-4 min-[1000px]:mt-0 min-[1000px]:grid-cols-3 min-[1000px]:items-stretch min-[1000px]:gap-4"
+        className="mt-[clamp(0.55rem,2vh,1.5rem)] hidden sm:grid sm:grid-cols-2 sm:gap-[clamp(0.45rem,1.2vh,0.75rem)] min-[1000px]:mt-0 min-[1000px]:grid-cols-3 min-[1000px]:items-stretch min-[1000px]:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div

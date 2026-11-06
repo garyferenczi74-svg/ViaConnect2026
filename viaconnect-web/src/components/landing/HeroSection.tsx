@@ -141,8 +141,16 @@ export function HeroSection({
                                         >
                                             {variantSubheadline}
                                         </p>
-                                    ) : null}
-                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 min-[1000px]:order-3 min-[1000px]:mt-0 min-[1000px]:justify-start">
+                                    ) : (
+                                        <p
+                                            data-testid="hero-tagline"
+                                            className="mt-[clamp(0.55rem,2vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-4 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            style={{ fontSize: 'clamp(0.8rem, min(1.2vw, 1.8vh), 1rem)' }}
+                                        >
+                                            One Genome  One Formulation  One Life at a Time
+                                        </p>
+                                    )}
+                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:mt-0 min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
                                             className="inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
@@ -166,17 +174,6 @@ export function HeroSection({
                                 </div>
                             </div>
                         </HeroOverlayScrollWrapper>
-                        {!variantSubheadline ? (
-                            <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-2 pt-[clamp(0.25rem,0.8vh,0.6rem)] min-[1000px]:mt-4 min-[1000px]:px-12">
-                                <p
-                                    data-testid="hero-tagline"
-                                    className="text-center text-slate-300 min-[1000px]:text-left leading-snug"
-                                    style={{ fontSize: 'clamp(0.8rem, min(1.2vw, 1.8vh), 1rem)' }}
-                                >
-                                    One Genome  One Formulation  One Life at a Time
-                                </p>
-                            </div>
-                        ) : null}
                         <LandingHeroCarousel />
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
                             {/* TODO: a poster gives an instant first frame while the 15MB hero
