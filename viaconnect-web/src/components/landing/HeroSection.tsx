@@ -84,16 +84,20 @@ export function HeroSection({
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
                 <section className="relative flex-1 flex flex-col">
-                    {/* Padding is a floor under the fixed bar. safe center only
-                        uses leftover space, so a short viewport cannot pull the
-                        headline up through the logo. The bottom pad clears the ticker. */}
-                    <div className="relative flex-1 flex flex-col justify-start pt-[102px] pb-16 md:pt-[88px] md:pb-8 min-[1000px]:pt-[5.5rem] min-[1000px]:pb-[clamp(3.5rem,10vh,6rem)] min-[1000px]:[justify-content:safe_center]">
+                    {/* Pad is the measured header plus a gap, so the headline
+                        cannot start on the logo. The tagline and the marquee
+                        are the last two rows and do not share a line. */}
+                    <div
+                        className="relative box-border flex h-[100svh] min-h-0 flex-1 flex-col"
+                        style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + 1.25rem)' }}
+                    >
                         <HeroOverlayScrollWrapper>
                             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:items-stretch min-[1000px]:block min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
+                                        data-testid="hero-headline"
                                         className="w-full max-w-full min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
-                                        style={{ fontSize: 'clamp(1.75rem, min(5.5vw, 6.2vh), 4.5rem)' }}
+                                        style={{ fontSize: 'clamp(1.5rem, min(4.5vw, 5vh), 4rem)' }}
                                     >
                                         {variantHeadline ? (
                                             <span className="block">{variantHeadline}</span>
@@ -115,20 +119,13 @@ export function HeroSection({
                                     <HeroPillars />
                                     {variantSubheadline ? (
                                         <p
-                                            className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
-                                            style={{ fontSize: 'clamp(0.9rem, min(1.5vw, 2.4vh), 1.125rem)' }}
+                                            className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            style={{ fontSize: 'clamp(0.85rem, min(1.3vw, 2vh), 1.05rem)' }}
                                         >
                                             {variantSubheadline}
                                         </p>
-                                    ) : (
-                                        <p
-                                            className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
-                                            style={{ fontSize: 'clamp(0.9rem, min(1.5vw, 2.4vh), 1.125rem)' }}
-                                        >
-                                            One Genome  One Formulation  One Life at a Time
-                                        </p>
-                                    )}
-                                    <div className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.5vh,1rem)] min-[1000px]:justify-start">
+                                    ) : null}
+                                    <div className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
                                             className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
@@ -152,6 +149,19 @@ export function HeroSection({
                                 </div>
                             </div>
                         </HeroOverlayScrollWrapper>
+                        {!variantSubheadline ? (
+                            <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-2 pt-[clamp(0.25rem,0.8vh,0.6rem)] min-[1000px]:px-12">
+                                <p
+                                    data-testid="hero-tagline"
+                                    className="text-center text-slate-300 min-[1000px]:text-left leading-snug"
+                                    style={{ fontSize: 'clamp(0.8rem, min(1.2vw, 1.8vh), 1rem)' }}
+                                >
+                                    One Genome  One Formulation  One Life at a Time
+                                </p>
+                            </div>
+                        ) : null}
+                        {/* Own row for the marquee. The ticker paints in this band. */}
+                        <div aria-hidden className="relative z-10 h-[clamp(1.75rem,5vh,2.5rem)] shrink-0" data-testid="hero-ticker-row" />
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
                             {/* TODO: a poster gives an instant first frame while the 15MB hero
                                 buffers, but only wire poster="/images/hero-poster.jpg" AFTER the
