@@ -31,8 +31,27 @@ const Logo = () => {
 export function LandingNav() {
     const [menuState, setMenuState] = React.useState(false)
     const [isScrolled, setIsScrolled] = React.useState(false)
+    const navRef = React.useRef<HTMLElement>(null)
 
     const { scrollY } = useScroll()
+
+    // Publish the fixed bar's height so the hero pad is always the bar plus a gap.
+    React.useLayoutEffect(() => {
+        const el = navRef.current
+        if (!el) return
+        const apply = () => {
+            const height = Math.ceil(el.getBoundingClientRect().height)
+            document.documentElement.style.setProperty('--landing-nav-h', `${height}px`)
+        }
+        apply()
+        const observer = new ResizeObserver(apply)
+        observer.observe(el)
+        window.addEventListener('resize', apply)
+        return () => {
+            observer.disconnect()
+            window.removeEventListener('resize', apply)
+        }
+    }, [])
 
     const sectionIds = React.useMemo(() => NAV_ITEMS.map((n) => n.id), [])
     const activeId = useActiveSection(sectionIds)
@@ -47,6 +66,7 @@ export function LandingNav() {
     return (
         <header>
             <nav
+                ref={navRef}
                 data-state={menuState ? 'active' : 'inactive'}
                 className="group fixed z-20 w-full px-2">
                 <div className={cn('mx-auto mt-2 max-w-2xl px-6 transition-all duration-300 min-[1000px]:max-w-7xl min-[1000px]:px-8 min-[1024px]:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl min-[1000px]:px-5')}>
