@@ -93,20 +93,31 @@ export function HeroSection({
                       overflow: hidden !important;
                     }
                     .hero-headline {
-                      font-size: clamp(1.75rem, min(5.5vw, calc(10.6vh - 23px)), 4.5rem) !important;
+                      font-size: clamp(1.75rem, min(5.5vw, 8vh), 4.5rem) !important;
                       line-height: 1.05 !important;
                       letter-spacing: -0.02em;
                     }
+                    .hero-subtitle,
+                    .hero-tagline {
+                      margin-top: 0 !important;
+                      line-height: 1.25 !important;
+                    }
+                    .hero-subtitle {
+                      font-size: clamp(0.75rem, 1.78vh, 1rem) !important;
+                    }
+                    [data-testid="hero-ctas"] a {
+                      height: clamp(1.875rem, 5.33vh, 3rem) !important;
+                    }
                     .pillar-title {
-                      font-size: clamp(0.9rem, min(1.9vw, calc(2.1vh + 5px)), 1.5rem) !important;
+                      font-size: clamp(0.875rem, min(1.9vw, 2.67vh), 1.5rem) !important;
                       line-height: 1.15 !important;
                     }
                     .pillar-body {
-                      font-size: clamp(0.7rem, min(1.15vw, calc(1.15vh + 6px)), 1rem) !important;
+                      font-size: clamp(14px, 1.78vh, 1rem) !important;
                       line-height: 1.35 !important;
                     }
                     .pillar-inner {
-                      padding: clamp(10px, 2.9vh, 26px) clamp(12px, 1.9vw, 28px) !important;
+                      padding: clamp(8px, calc(4.71vh - 16px), 26px) clamp(12px, 1.95vw, 28px) !important;
                     }
                     .pillar-numeral {
                       top: clamp(4px, 0.9vh, 12px) !important;
@@ -122,10 +133,10 @@ export function HeroSection({
                         exactly one screen so the ticker stays in the viewport. */}
                     <div
                         className="hero-fold relative box-border flex min-h-0 flex-1 flex-col"
-                        style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + clamp(10px, 1.5vh, 1.25rem))' }}
+                        style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem))' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(8px,1.6vh,22px)] min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(8px,calc(4.12vh-19px),18px)] min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
                                         data-testid="hero-headline"
@@ -143,7 +154,7 @@ export function HeroSection({
                                     </h1>
                                     {!variantSubheadline && (
                                         <p
-                                            className="mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap"
+                                            className="hero-subtitle mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-slate-400 text-balance min-[1000px]:whitespace-nowrap"
                                             style={{ fontSize: 'clamp(0.8rem, min(1.35vw, 2.1vh), 1rem)' }}
                                         >
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
@@ -160,7 +171,7 @@ export function HeroSection({
                                     ) : (
                                         <p
                                             data-testid="hero-tagline"
-                                            className="mt-[clamp(0.55rem,2vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            className="hero-tagline mt-[clamp(0.55rem,2vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-balance text-slate-300"
                                             style={{ fontSize: 'clamp(0.8rem, min(1.2vw, 1.8vh), 1rem)' }}
                                         >
                                             One Genome  One Formulation  One Life at a Time
@@ -169,18 +180,18 @@ export function HeroSection({
                                     <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:mt-0 min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
-                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.25rem,6.5vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                             <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                             <ChevronRight strokeWidth={1.5} className="ml-1" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.25rem,6.5vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
                                             href="/practitioners"
-                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.25rem,6.5vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>

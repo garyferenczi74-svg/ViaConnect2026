@@ -85,10 +85,24 @@ test.describe('landing hero one viewport', () => {
       expect(headline).not.toBeNull();
       expect(nav).not.toBeNull();
       if (headline && nav) {
-        expect(headline.y).toBeGreaterThanOrEqual(nav.y + nav.height + 8);
+        expect(headline.y).toBeGreaterThanOrEqual(nav.y + nav.height + 4);
       }
 
       await heroFits(page, height);
+
+      if (width === 1007 && height === 560) {
+        const bodySize = await page.locator('.pillar-body').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        expect(bodySize).toBeGreaterThanOrEqual(13);
+        expect(bodySize).toBeLessThanOrEqual(14.5);
+      }
+
+      const ticker = await page.getByTestId('hero-ticker').boundingBox();
+      expect(ticker).not.toBeNull();
+      if (ticker) {
+        const viewportHeight = page.viewportSize()?.height ?? height;
+        expect(viewportHeight - (ticker.y + ticker.height)).toBeGreaterThanOrEqual(-1);
+        expect(viewportHeight - (ticker.y + ticker.height)).toBeLessThanOrEqual(2);
+      }
 
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);

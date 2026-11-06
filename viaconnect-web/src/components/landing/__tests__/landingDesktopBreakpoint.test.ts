@@ -28,10 +28,12 @@ describe('landing desktop breakpoint', () => {
   it('lays the hero out as desktop from 1000px and keeps header clearance below that', () => {
     const hero = src('src/components/landing/HeroSection.tsx');
     expect(hero).toContain('min-[1000px]:max-w-5xl');
-    expect(hero).toContain('clamp(1.75rem, min(5.5vw, calc(10.6vh - 23px)), 4.5rem)');
-    expect(hero).toContain('var(--landing-nav-h, 4.75rem) + clamp(10px, 1.5vh, 1.25rem)');
+    expect(hero).toContain('clamp(1.75rem, min(5.5vw, 8vh), 4.5rem)');
+    expect(hero).toContain('clamp(14px, 1.78vh, 1rem)');
+    expect(hero).toContain('var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem)');
+    expect(hero).toContain('clamp(1.875rem, 5.33vh, 3rem)');
     expect(hero).toContain('data-testid="hero-tagline"');
-    expect(hero).toContain('min-[1000px]:h-[clamp(2.25rem,6.5vh,3rem)]');
+    expect(hero).toContain('min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)]');
     expect(hero).toContain('LandingHeroCarousel');
     expect(hero).toContain('md:max-w-none');
     expect(hero).not.toContain('min-[1000px]:pt-0');
