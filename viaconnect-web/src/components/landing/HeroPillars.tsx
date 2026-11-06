@@ -142,8 +142,8 @@ function PillarCard({
           background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.18)`,
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
-          minHeight: 'clamp(5.25rem, 16vh, 8.75rem)',
-          padding: 'clamp(10px, 1.7vh, 18px) clamp(12px, 1.4vw, 20px)',
+          minHeight: 'clamp(4.5rem, 14vh, 8.75rem)',
+          padding: 'clamp(8px, 1.4vh, 18px) clamp(10px, 1.2vw, 20px)',
         }}
       >
         <motion.div
@@ -159,42 +159,34 @@ function PillarCard({
             color: 'transparent',
             WebkitTextStroke: `1.2px ${numeralStrokeIdle}`,
             transition: 'all 500ms ease',
-            fontSize: 'clamp(2.5rem, min(7vw, 11vh), 6.875rem)',
+            fontSize: 'clamp(1.75rem, 8vh, 6.875rem)',
           }}
         >
           {pillar.numeral}
         </span>
 
-        <div
-          className="relative z-[2] flex h-full flex-col text-left sm:text-inherit"
-          style={
-            reduceMotion ? undefined : { transform: 'translateZ(28px)' }
-          }
-        >
+        <div className="relative z-[2] flex h-full flex-col text-left sm:text-inherit">
           <span
             aria-label={pillar.ariaChapter}
-            className="mb-[clamp(2px,0.6vh,6px)] font-semibold uppercase tracking-[0.18em]"
+            className="pillar-eyebrow mb-[clamp(2px,0.4vh,6px)] font-semibold uppercase tracking-[0.18em]"
             style={{
               color: `rgba(${pillar.accent.rgb}, 0.95)`,
-              fontSize: 'clamp(0.6rem, min(1.1vw, 1.6vh), 0.66rem)',
+              fontSize: 'clamp(0.6rem, 1.4vh, 0.66rem)',
             }}
           >
             {pillar.eyebrow}
           </span>
 
           <h3
-            className="mb-[clamp(2px,0.5vh,8px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white"
-            style={{ fontSize: 'clamp(1rem, min(1.7vw, 2.8vh), 1.375rem)' }}
+            className="pillar-title mb-[clamp(2px,0.4vh,8px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white"
+            style={{ fontSize: 'clamp(0.8rem, 2.3vh, 1.375rem)' }}
           >
             {pillar.headline}
           </h3>
 
           <p
-            className="flex-1 text-white/72"
-            style={{
-              fontSize: 'clamp(0.72rem, min(1.15vw, 1.85vh), 0.85rem)',
-              lineHeight: 1.35,
-            }}
+            className="pillar-body flex-1 text-white/72"
+            style={{ fontSize: 'clamp(0.6875rem, 1.7vh, 0.85rem)', lineHeight: 1.3 }}
           >
             {pillar.body}
           </p>

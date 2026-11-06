@@ -28,7 +28,7 @@ export function HeroOverlayScrollWrapper({ children }: HeroOverlayScrollWrapperP
     const y = useTransform(scrollY, [0, fadeMax], [0, -120])
 
     return (
-        <motion.div style={{ opacity, y }} className="relative z-10">
+        <motion.div style={{ opacity, y }} className="relative z-10 flex min-h-0 flex-1 flex-col">
             {children}
         </motion.div>
     )
