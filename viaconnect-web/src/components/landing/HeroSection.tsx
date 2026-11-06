@@ -84,11 +84,14 @@ export function HeroSection({
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
                 <section className="relative flex-1 flex flex-col">
-                    <div className="relative flex-1 pt-[102px] pb-[80px] md:pt-0 md:pb-0 md:flex md:flex-col md:justify-center">
+                    {/* From 768px the hero used to center with no top padding, so a tall
+                        stack slid under the fixed bar. Keep a header clearance until
+                        the desktop layout (1000px), which is short enough to center. */}
+                    <div className="relative flex-1 pt-[102px] pb-[80px] md:flex md:flex-col md:justify-start md:pt-[88px] md:pb-6 min-[1000px]:justify-center min-[1000px]:pt-0 min-[1000px]:pb-0">
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 lg:items-stretch lg:block lg:px-12">
-                                <div className="w-full mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
-                                    <h1 className="w-full max-w-full lg:max-w-5xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:items-stretch min-[1000px]:block min-[1000px]:px-12">
+                                <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:ml-0 min-[1000px]:text-left">
+                                    <h1 className="w-full max-w-full min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-3xl sm:text-4xl md:text-5xl min-[1000px]:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
                                         {variantHeadline ? (
                                             <span className="block">{variantHeadline}</span>
                                         ) : (
@@ -99,21 +102,21 @@ export function HeroSection({
                                         )}
                                     </h1>
                                     {!variantSubheadline && (
-                                        <p className="mt-6 sm:mt-4 w-full max-w-full mx-auto lg:mx-0 text-center lg:text-left text-sm sm:text-base text-slate-400 leading-relaxed text-balance lg:whitespace-nowrap">
+                                        <p className="mt-6 sm:mt-4 w-full max-w-full mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-sm sm:text-base text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap">
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                         </p>
                                     )}
                                     <HeroPillars />
                                     {variantSubheadline ? (
-                                        <p className="mt-6 sm:mt-10 w-full max-w-full lg:max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        <p className="mt-6 sm:mt-10 w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                             {variantSubheadline}
                                         </p>
                                     ) : (
-                                        <p className="mt-6 sm:mt-10 w-full max-w-full lg:max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        <p className="mt-6 sm:mt-10 w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
-                                    <div className="mt-6 sm:mt-10 w-full flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row lg:justify-start">
+                                    <div className="mt-6 sm:mt-10 w-full flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
                                             className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
@@ -151,7 +154,7 @@ export function HeroSection({
                                 playsInline
                                 preload="auto"
                                 disablePictureInPicture
-                                className="size-full object-cover opacity-30 lg:opacity-50"
+                                className="size-full object-cover opacity-30 min-[1000px]:opacity-50"
                                 src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA%20HD.mp4"
                             />
                         </div>
