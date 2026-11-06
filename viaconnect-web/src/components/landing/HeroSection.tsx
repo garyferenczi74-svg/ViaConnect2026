@@ -87,9 +87,9 @@ export function HeroSection({
                     .hero-screen,
                     .hero-fold {
                       box-sizing: border-box !important;
-                      height: 100% !important;
-                      min-height: 100% !important;
-                      max-height: 100% !important;
+                      height: auto !important;
+                      min-height: 100svh !important;
+                      max-height: none !important;
                     }
                     .hero-headline {
                       font-size: clamp(2.75rem, min(5.5vw, 8vh), 4.5rem) !important;
@@ -100,15 +100,16 @@ export function HeroSection({
                 `}</style>
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
-                <section className="relative flex min-h-0 flex-1 flex-col min-[1000px]:overflow-hidden">
-                    {/* Pad is the measured header plus a gap. Desktop is one
-                        screen-tall column; the ticker uses mt-auto to sit on the bottom. */}
+                <section className="relative flex min-h-0 flex-1 flex-col min-[1000px]:min-h-[auto]">
+                    {/* Pad is the measured header plus a gap. The column is at
+                        least one screen. On a short screen it grows so the
+                        tagline and ticker follow the cards. */}
                     <div
-                        className="hero-fold relative box-border flex min-h-0 flex-1 flex-col"
+                        className="hero-fold relative box-border flex min-h-0 flex-1 flex-col min-[1000px]:min-h-[100svh]"
                         style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + 1.25rem)' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-full min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(12px,2vh,28px)] min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-[auto] min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(12px,2vh,28px)] min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
                                         data-testid="hero-headline"
@@ -166,7 +167,7 @@ export function HeroSection({
                             </div>
                         </HeroOverlayScrollWrapper>
                         {!variantSubheadline ? (
-                            <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-2 pt-[clamp(0.25rem,0.8vh,0.6rem)] min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto w-full max-w-7xl shrink-0 px-6 pb-2 pt-[clamp(0.25rem,0.8vh,0.6rem)] min-[1000px]:mt-4 min-[1000px]:px-12">
                                 <p
                                     data-testid="hero-tagline"
                                     className="text-center text-slate-300 min-[1000px]:text-left leading-snug"

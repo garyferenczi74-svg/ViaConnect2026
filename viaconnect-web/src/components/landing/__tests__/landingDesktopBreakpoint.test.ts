@@ -44,6 +44,7 @@ describe('landing desktop breakpoint', () => {
     expect(pillars).toContain('hidden sm:grid sm:grid-cols-2');
     expect(pillars).toContain('min-[1000px]:grid-cols-3');
     expect(pillars).toContain('min-[1000px]:col-span-1');
+    expect(pillars).not.toContain('min-[1000px]:overflow-hidden');
     expect(pillars).toContain('clamp(1.375rem, min(1.9vw, 4vh), 1.5rem)');
     expect(pillars).toContain('font-size: 1rem');
     expect(pillars).toContain('padding: 26px 28px');
