@@ -238,6 +238,11 @@ export function HeroPillars() {
             0 16px 36px -14px rgba(226,122,44,0.26),
             0 4px 12px -6px rgba(26,39,68,0.45);
         }
+        @media (min-width: 1000px) {
+          .pillar-title { font-size: clamp(1.375rem, min(1.9vw, 4vh), 1.5rem) !important; line-height: 1.15 !important; }
+          .pillar-body { font-size: 1rem !important; line-height: 1.5 !important; }
+          .pillar-inner { padding: 26px 28px !important; }
+        }
       `}</style>
 
       {/* Mobile: Prompt 220 revised auto-rotating scroll-snap carousel
@@ -248,15 +253,15 @@ export function HeroPillars() {
       <div
         role="list"
         data-testid="hero-pillars-desktop-grid"
-        className="mt-[clamp(0.55rem,2vh,1.5rem)] hidden sm:grid sm:grid-cols-2 sm:gap-[clamp(0.45rem,1.2vh,0.75rem)] min-[1000px]:grid-cols-3 min-[1000px]:gap-[clamp(0.5rem,1.4vh,1rem)]"
+        className="mt-[clamp(0.55rem,2vh,1.5rem)] hidden sm:grid sm:grid-cols-2 sm:gap-[clamp(0.45rem,1.2vh,0.75rem)] min-[1000px]:order-4 min-[1000px]:mt-0 min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:grid-cols-3 min-[1000px]:items-stretch min-[1000px]:gap-4 min-[1000px]:overflow-hidden"
       >
         {PILLARS.map((pillar, index) => (
           <div
             key={pillar.numeral}
             className={
               index === 2
-                ? 'sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[480px] min-[1000px]:col-span-1 min-[1000px]:max-w-none'
-                : ''
+                ? 'h-full sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[480px] min-[1000px]:col-span-1 min-[1000px]:max-w-none'
+                : 'h-full'
             }
           >
             <PillarCard

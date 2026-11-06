@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ChevronRight, ArrowDown } from 'lucide-react'
 import { HeroPillars } from './HeroPillars'
 import { HeroOverlayScrollWrapper } from './HeroOverlayScrollWrapper'
+import { LandingHeroCarousel } from './LandingHeroCarousel'
 
 // Prompt #138a Phase 4: optional copy props for hero variant rendering.
 // Defaults preserve the original control copy when no variant is active, so
@@ -80,23 +81,38 @@ export function HeroSection({
     }, [])
 
     return (
-        <div className="flex min-h-[100svh] flex-col relative">
+        <div className="hero-screen flex min-h-[100svh] flex-col relative">
+                <style>{`
+                  @media (min-width: 1000px) {
+                    .hero-screen,
+                    .hero-fold {
+                      box-sizing: border-box !important;
+                      height: 100% !important;
+                      min-height: 100% !important;
+                      max-height: 100% !important;
+                    }
+                    .hero-headline {
+                      font-size: clamp(2.75rem, min(5.5vw, 8vh), 4.5rem) !important;
+                      line-height: 1.05 !important;
+                      letter-spacing: -0.02em;
+                    }
+                  }
+                `}</style>
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
-                <section className="relative flex-1 flex flex-col">
-                    {/* Pad is the measured header plus a gap, so the headline
-                        cannot start on the logo. The tagline and the marquee
-                        are the last two rows and do not share a line. */}
+                <section className="relative flex min-h-0 flex-1 flex-col min-[1000px]:overflow-hidden">
+                    {/* Pad is the measured header plus a gap. Desktop is one
+                        screen-tall column; the ticker uses mt-auto to sit on the bottom. */}
                     <div
-                        className="relative box-border flex h-[100svh] min-h-0 flex-1 flex-col"
+                        className="hero-fold relative box-border flex min-h-0 flex-1 flex-col"
                         style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + 1.25rem)' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:items-stretch min-[1000px]:block min-[1000px]:px-12">
-                                <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:ml-0 min-[1000px]:text-left">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-full min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(12px,2vh,28px)] min-[1000px]:px-12">
+                                <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
                                         data-testid="hero-headline"
-                                        className="w-full max-w-full min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
+                                        className="hero-headline w-full max-w-full shrink-0 min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
                                         style={{ fontSize: 'clamp(1.5rem, min(4.5vw, 5vh), 4rem)' }}
                                     >
                                         {variantHeadline ? (
@@ -110,7 +126,7 @@ export function HeroSection({
                                     </h1>
                                     {!variantSubheadline && (
                                         <p
-                                            className="mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap"
+                                            className="mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap"
                                             style={{ fontSize: 'clamp(0.8rem, min(1.35vw, 2.1vh), 1rem)' }}
                                         >
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
@@ -125,21 +141,21 @@ export function HeroSection({
                                             {variantSubheadline}
                                         </p>
                                     ) : null}
-                                    <div className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
+                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 min-[1000px]:order-3 min-[1000px]:mt-0 min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
-                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                             <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                             <ChevronRight strokeWidth={1.5} className="ml-1" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
                                             href="/practitioners"
-                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>
@@ -160,8 +176,7 @@ export function HeroSection({
                                 </p>
                             </div>
                         ) : null}
-                        {/* Own row for the marquee. The ticker paints in this band. */}
-                        <div aria-hidden className="relative z-10 h-[clamp(1.75rem,5vh,2.5rem)] shrink-0" data-testid="hero-ticker-row" />
+                        <LandingHeroCarousel />
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
                             {/* TODO: a poster gives an instant first frame while the 15MB hero
                                 buffers, but only wire poster="/images/hero-poster.jpg" AFTER the

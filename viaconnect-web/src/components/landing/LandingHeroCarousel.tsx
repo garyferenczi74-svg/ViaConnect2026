@@ -43,7 +43,7 @@ export function LandingHeroCarousel() {
         <section
             aria-hidden="true"
             data-testid="hero-ticker"
-            className="hidden min-[1000px]:flex absolute left-0 right-0 z-[2] pointer-events-none items-center overflow-hidden top-[calc(100svh-clamp(1.75rem,5vh,2.5rem))] h-[clamp(1.75rem,5vh,2.5rem)]"
+            className="relative z-10 hidden min-[1000px]:mt-auto min-[1000px]:flex h-[clamp(1.75rem,4.5vh,2.75rem)] w-full shrink-0 items-center overflow-hidden"
         >
             <div className="group relative pointer-events-auto w-full">
                 <InfiniteSlider speedOnHover={20} speed={40} gap={gap}>
