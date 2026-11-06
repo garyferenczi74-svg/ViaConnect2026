@@ -14,54 +14,47 @@ import { InfiniteSlider } from '@/components/ui/infinite-slider'
 // (text, internal gap, vertical padding, InfiniteSlider chip gap). Desktop
 // unchanged via min-[1000px]: prefixes + matchMedia-driven gap prop.
 export function LandingHeroCarousel() {
-    // InfiniteSlider's `gap` is a JS prop, not a className, so the responsive
-    // breakpoint is detected via matchMedia. Mobile gap matches the 25%
-    // reduction (112 * 0.75 = 84). SSR-safe default to desktop value.
-    const [gap, setGap] = useState(112)
+    // Gap is a JS prop. Below 1000px the ticker is hidden; the 999px query
+    // keeps the smaller mobile gap if it is ever shown. Desktop gap scales
+    // with the viewport but never closes, so chips cannot sit on each other.
+    const [gap, setGap] = useState(64)
     useEffect(() => {
         const mql = window.matchMedia('(max-width: 999px)')
-        const update = () => setGap(mql.matches ? 84 : 112)
+        const update = () => {
+            if (mql.matches) {
+                setGap(84)
+                return
+            }
+            const raw = Math.round(Math.min(window.innerWidth * 0.055, window.innerHeight * 0.1))
+            setGap(Math.max(32, Math.min(112, raw)))
+        }
         update()
         mql.addEventListener('change', update)
-        return () => mql.removeEventListener('change', update)
+        window.addEventListener('resize', update)
+        return () => {
+            mql.removeEventListener('change', update)
+            window.removeEventListener('resize', update)
+        }
     }, [])
+
+    const chipClass = 'shrink-0 font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap'
 
     return (
         <section
             aria-hidden="true"
-            className="hidden min-[1000px]:block absolute left-0 right-0 z-[2] pb-2 pointer-events-none top-[calc(100svh-100px)]"
+            className="hidden min-[1000px]:flex absolute left-0 right-0 z-[2] pointer-events-none items-center overflow-hidden top-[calc(100svh-clamp(2.25rem,7vh,5.5rem))] h-[clamp(2.25rem,7vh,5.5rem)]"
         >
-            <div className="group relative pointer-events-auto">
-                <div className="flex flex-col items-center md:flex-row">
-                    <div className="relative py-[18px] min-[1000px]:py-6 w-full">
-                        <InfiniteSlider speedOnHover={20} speed={40} gap={gap}>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Backed by Science</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Encrypted in transit</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">GMP Certified</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">CAP/CLIA Lab Partners</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Dual Liposomal-Micellar Delivery</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Maximum Bioavailability</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">28-Peptide Product Data</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] min-[1000px]:gap-2 text-slate-400">
-                                <span className="text-xs min-[1000px]:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">SNP-Targeted Nutraceuticals</span>
-                            </div>
-                        </InfiniteSlider>
-                    </div>
-                </div>
+            <div className="group relative pointer-events-auto w-full">
+                <InfiniteSlider speedOnHover={20} speed={40} gap={gap}>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>Backed by Science</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>Encrypted in transit</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>GMP Certified</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>CAP/CLIA Lab Partners</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>Dual Liposomal-Micellar Delivery</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>Maximum Bioavailability</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>28-Peptide Product Data</span>
+                    <span className={chipClass} style={{ fontSize: 'clamp(0.65rem, 1.45vh, 0.875rem)' }}>SNP-Targeted Nutraceuticals</span>
+                </InfiniteSlider>
             </div>
         </section>
     )

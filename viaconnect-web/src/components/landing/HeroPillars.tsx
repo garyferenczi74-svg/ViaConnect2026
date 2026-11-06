@@ -137,11 +137,13 @@ function PillarCard({
       data-accent-rgb={pillar.accent.rgb}
     >
       <div
-        className="pillar-inner relative flex h-full min-h-[120px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-[16px_18px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[140px] sm:rounded-[18px] sm:p-[18px_20px]"
+        className="pillar-inner relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.06] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:rounded-[18px]"
         style={{
           background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.18)`,
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
+          minHeight: 'clamp(5.25rem, 16vh, 8.75rem)',
+          padding: 'clamp(10px, 1.7vh, 18px) clamp(12px, 1.4vw, 20px)',
         }}
       >
         <motion.div
@@ -152,11 +154,12 @@ function PillarCard({
 
         <span
           aria-hidden="true"
-          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-6px] z-[1] select-none text-[64px] font-bold leading-none tracking-[-0.06em] sm:right-[-4px] sm:top-[-10px] sm:text-[90px] min-[1000px]:text-[110px]"
+          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-4px] z-[1] select-none font-bold leading-none tracking-[-0.06em] sm:right-[-4px]"
           style={{
             color: 'transparent',
             WebkitTextStroke: `1.2px ${numeralStrokeIdle}`,
             transition: 'all 500ms ease',
+            fontSize: 'clamp(2.5rem, min(7vw, 11vh), 6.875rem)',
           }}
         >
           {pillar.numeral}
@@ -170,17 +173,29 @@ function PillarCard({
         >
           <span
             aria-label={pillar.ariaChapter}
-            className="mb-[5px] text-[10px] font-semibold uppercase tracking-[0.18em] sm:mb-1.5 sm:text-[10.5px]"
-            style={{ color: `rgba(${pillar.accent.rgb}, 0.95)` }}
+            className="mb-[clamp(2px,0.6vh,6px)] font-semibold uppercase tracking-[0.18em]"
+            style={{
+              color: `rgba(${pillar.accent.rgb}, 0.95)`,
+              fontSize: 'clamp(0.6rem, min(1.1vw, 1.6vh), 0.66rem)',
+            }}
           >
             {pillar.eyebrow}
           </span>
 
-          <h3 className="mb-1.5 text-[20px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]">
+          <h3
+            className="mb-[clamp(2px,0.5vh,8px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white"
+            style={{ fontSize: 'clamp(1rem, min(1.7vw, 2.8vh), 1.375rem)' }}
+          >
             {pillar.headline}
           </h3>
 
-          <p className="flex-1 text-[13px] leading-[1.4] text-white/72 sm:text-[13.5px] sm:leading-[1.45]">
+          <p
+            className="flex-1 text-white/72"
+            style={{
+              fontSize: 'clamp(0.72rem, min(1.15vw, 1.85vh), 0.85rem)',
+              lineHeight: 1.35,
+            }}
+          >
             {pillar.body}
           </p>
         </div>
@@ -241,7 +256,7 @@ export function HeroPillars() {
       <div
         role="list"
         data-testid="hero-pillars-desktop-grid"
-        className="mt-6 hidden sm:grid sm:grid-cols-2 sm:gap-3 min-[1000px]:grid-cols-3 min-[1000px]:gap-4"
+        className="mt-[clamp(0.55rem,2vh,1.5rem)] hidden sm:grid sm:grid-cols-2 sm:gap-[clamp(0.45rem,1.2vh,0.75rem)] min-[1000px]:grid-cols-3 min-[1000px]:gap-[clamp(0.5rem,1.4vh,1rem)]"
       >
         {PILLARS.map((pillar, index) => (
           <div

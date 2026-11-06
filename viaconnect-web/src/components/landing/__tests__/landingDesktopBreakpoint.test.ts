@@ -28,11 +28,12 @@ describe('landing desktop breakpoint', () => {
   it('lays the hero out as desktop from 1000px and keeps header clearance below that', () => {
     const hero = src('src/components/landing/HeroSection.tsx');
     expect(hero).toContain('min-[1000px]:max-w-5xl');
-    expect(hero).toContain('min-[1000px]:text-6xl');
+    expect(hero).toContain('clamp(1.75rem, min(5.5vw, 6.2vh), 4.5rem)');
     expect(hero).toContain('md:max-w-none');
     expect(hero).toContain('md:pt-[88px]');
-    expect(hero).toContain('min-[1000px]:pt-0');
-    expect(hero).toContain('min-[1000px]:justify-center');
+    expect(hero).toContain('min-[1000px]:pt-[5.5rem]');
+    expect(hero).toContain('safe_center');
+    expect(hero).not.toContain('min-[1000px]:pt-0');
     expect(hero).not.toContain('lg:text-6xl');
     expect(hero).toContain('strokeWidth={1.5}');
   });
@@ -42,13 +43,16 @@ describe('landing desktop breakpoint', () => {
     expect(pillars).toContain('hidden sm:grid sm:grid-cols-2');
     expect(pillars).toContain('min-[1000px]:grid-cols-3');
     expect(pillars).toContain('min-[1000px]:col-span-1');
+    expect(pillars).toContain('clamp(2.5rem, min(7vw, 11vh), 6.875rem)');
     expect(pillars).not.toContain('lg:grid-cols-3');
   });
 
   it('shows the hero ticker on the same 1000px switch', () => {
     const carousel = src('src/components/landing/LandingHeroCarousel.tsx');
-    expect(carousel).toContain('hidden min-[1000px]:block');
+    expect(carousel).toContain('hidden min-[1000px]:flex');
     expect(carousel).toContain("(max-width: 999px)");
+    expect(carousel).toContain('Math.max(32, Math.min(112, raw))');
+    expect(carousel).toContain('top-[calc(100svh-clamp(2.25rem,7vh,5.5rem))]');
     expect(carousel).not.toContain('hidden lg:block');
   });
 });
