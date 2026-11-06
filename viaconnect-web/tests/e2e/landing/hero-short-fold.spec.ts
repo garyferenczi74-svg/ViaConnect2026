@@ -1,7 +1,5 @@
-// Desktop hero: card text is fully visible and stays above the tagline
-// and the ticker. On a short screen the hero grows. On a 720px-tall
-// screen and up, the ticker sits on the viewport bottom when the
-// content fits.
+// Desktop hero fits in one viewport. Card numbers stay inside the cards,
+// card text is not clipped, and the CTAs sit above the ticker.
 
 import { expect, test, type Page } from '@playwright/test';
 
@@ -12,28 +10,52 @@ const FOLDS = [
   { width: 1440, height: 900 },
 ] as const;
 
-async function cardTextIsFullyVisible(page: Page) {
+async function heroFits(page: Page, height: number) {
+  const viewportHeight = page.viewportSize()?.height ?? height;
+  const pieces = ['hero-headline', 'hero-tagline', 'hero-ctas', 'hero-ticker'] as const;
+  for (const id of pieces) {
+    const box = await page.getByTestId(id).boundingBox();
+    expect(box, id).not.toBeNull();
+    if (!box) continue;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewportHeight + 1);
+  }
+
+  const screen = await page.locator('.hero-screen').boundingBox();
+  expect(screen).not.toBeNull();
+  if (screen) {
+    expect(screen.height).toBeLessThanOrEqual(viewportHeight + 1);
+  }
+
   const cards = page.locator('[data-testid="hero-pillars-desktop-grid"] article');
   const count = await cards.count();
-  expect(count).toBeGreaterThan(0);
+  expect(count).toBe(3);
   const tagline = await page.getByTestId('hero-tagline').boundingBox();
+  const ctas = await page.getByTestId('hero-ctas').boundingBox();
   const ticker = await page.getByTestId('hero-ticker').boundingBox();
   expect(tagline).not.toBeNull();
+  expect(ctas).not.toBeNull();
   expect(ticker).not.toBeNull();
-  if (!tagline || !ticker) return;
+  if (!tagline || !ctas || !ticker) return;
+  expect(ctas.y).toBeGreaterThanOrEqual(tagline.y + tagline.height - 1);
+  expect(ticker.y).toBeGreaterThanOrEqual(ctas.y + ctas.height - 1);
 
   for (let i = 0; i < count; i++) {
     const card = cards.nth(i);
     const box = await card.boundingBox();
     expect(box).not.toBeNull();
-    if (!box || box.height < 1) continue;
-    expect(box.y + box.height + 16).toBeLessThanOrEqual(tagline.y + 1);
-    expect(box.y + box.height).toBeLessThanOrEqual(ticker.y);
-    const ctas = await page.getByTestId('hero-ctas').boundingBox();
-    expect(ctas).not.toBeNull();
-    if (ctas) {
-      expect(tagline.y + tagline.height).toBeLessThanOrEqual(ctas.y + 1);
-      expect(ctas.y + ctas.height).toBeLessThanOrEqual(ticker.y + 1);
+    if (!box) continue;
+    expect(box.y + box.height).toBeLessThanOrEqual(tagline.y + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewportHeight + 1);
+
+    const numeral = card.locator('.pillar-numeral');
+    const numeralBox = await numeral.boundingBox();
+    expect(numeralBox).not.toBeNull();
+    if (numeralBox) {
+      expect(numeralBox.x).toBeGreaterThanOrEqual(box.x - 1);
+      expect(numeralBox.y).toBeGreaterThanOrEqual(box.y - 1);
+      expect(numeralBox.x + numeralBox.width).toBeLessThanOrEqual(box.x + box.width + 1);
+      expect(numeralBox.y + numeralBox.height).toBeLessThanOrEqual(box.y + box.height + 1);
     }
 
     const texts = card.locator('h3, p');
@@ -41,24 +63,19 @@ async function cardTextIsFullyVisible(page: Page) {
     expect(textCount).toBeGreaterThan(0);
     for (let j = 0; j < textCount; j++) {
       const node = texts.nth(j);
+      const clipped = await node.evaluate((el) => el.scrollHeight - el.clientHeight);
+      expect(clipped).toBeLessThanOrEqual(1);
       const textBox = await node.boundingBox();
       expect(textBox).not.toBeNull();
       if (!textBox) continue;
-      expect(textBox.x).toBeGreaterThanOrEqual(box.x - 1);
-      expect(textBox.y).toBeGreaterThanOrEqual(box.y - 1);
-      expect(textBox.x + textBox.width).toBeLessThanOrEqual(box.x + box.width + 1);
       expect(textBox.y + textBox.height).toBeLessThanOrEqual(box.y + box.height + 1);
-      expect(textBox.y + textBox.height).toBeLessThanOrEqual(tagline.y);
-      expect(textBox.y + textBox.height).toBeLessThanOrEqual(ticker.y);
-      const clipped = await node.evaluate((el) => el.scrollHeight - el.clientHeight);
-      expect(clipped).toBeLessThanOrEqual(1);
     }
   }
 }
 
-test.describe('landing hero short fold', () => {
+test.describe('landing hero one viewport', () => {
   for (const { width, height } of FOLDS) {
-    test(`card text is unclipped and clear of the tagline at ${width}x${height}`, async ({ page }) => {
+    test(`hero fits without vertical overflow at ${width}x${height}`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto('/');
       await page.getByTestId('hero-headline').waitFor({ state: 'visible' });
@@ -67,24 +84,11 @@ test.describe('landing hero short fold', () => {
       const nav = await page.locator('header nav').boundingBox();
       expect(headline).not.toBeNull();
       expect(nav).not.toBeNull();
-      if (!headline || !nav) return;
-      expect(headline.y).toBeGreaterThanOrEqual(nav.y + nav.height + 12);
-
-      await cardTextIsFullyVisible(page);
-
-      const tagline = await page.getByTestId('hero-tagline').boundingBox();
-      const ticker = await page.getByTestId('hero-ticker').boundingBox();
-      expect(tagline).not.toBeNull();
-      expect(ticker).not.toBeNull();
-      if (!tagline || !ticker) return;
-      expect(tagline.y + tagline.height).toBeLessThanOrEqual(ticker.y - 1);
-
-      const viewportHeight = page.viewportSize()?.height ?? height;
-      const heroHeight = await page.locator('.hero-screen').evaluate((el) => el.getBoundingClientRect().height);
-      if (heroHeight <= viewportHeight + 1) {
-        expect(viewportHeight - (ticker.y + ticker.height)).toBeGreaterThanOrEqual(-1);
-        expect(viewportHeight - (ticker.y + ticker.height)).toBeLessThanOrEqual(24);
+      if (headline && nav) {
+        expect(headline.y).toBeGreaterThanOrEqual(nav.y + nav.height + 8);
       }
+
+      await heroFits(page, height);
 
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);

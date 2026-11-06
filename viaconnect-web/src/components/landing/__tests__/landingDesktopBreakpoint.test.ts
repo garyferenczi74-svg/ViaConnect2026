@@ -28,10 +28,10 @@ describe('landing desktop breakpoint', () => {
   it('lays the hero out as desktop from 1000px and keeps header clearance below that', () => {
     const hero = src('src/components/landing/HeroSection.tsx');
     expect(hero).toContain('min-[1000px]:max-w-5xl');
-    expect(hero).toContain('clamp(2.75rem, min(5.5vw, 8vh), 4.5rem)');
-    expect(hero).toContain('var(--landing-nav-h, 4.75rem) + 1.25rem');
+    expect(hero).toContain('clamp(1.75rem, min(5.5vw, calc(10.6vh - 23px)), 4.5rem)');
+    expect(hero).toContain('var(--landing-nav-h, 4.75rem) + clamp(10px, 1.5vh, 1.25rem)');
     expect(hero).toContain('data-testid="hero-tagline"');
-    expect(hero).toContain('min-[1000px]:h-12');
+    expect(hero).toContain('min-[1000px]:h-[clamp(2.25rem,6.5vh,3rem)]');
     expect(hero).toContain('LandingHeroCarousel');
     expect(hero).toContain('md:max-w-none');
     expect(hero).not.toContain('min-[1000px]:pt-0');
@@ -45,9 +45,7 @@ describe('landing desktop breakpoint', () => {
     expect(pillars).toContain('min-[1000px]:grid-cols-3');
     expect(pillars).toContain('min-[1000px]:col-span-1');
     expect(pillars).not.toContain('min-[1000px]:overflow-hidden');
-    expect(pillars).toContain('clamp(1.375rem, min(1.9vw, 4vh), 1.5rem)');
-    expect(pillars).toContain('font-size: 1rem');
-    expect(pillars).toContain('padding: 26px 28px');
+    expect(pillars).not.toContain('padding: 26px 28px');
     expect(pillars).toContain('clamp(1.75rem, 8vh, 6.875rem)');
     expect(pillars).not.toContain('lg:grid-cols-3');
   });
