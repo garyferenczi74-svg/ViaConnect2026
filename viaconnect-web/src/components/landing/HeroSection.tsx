@@ -108,8 +108,11 @@ export function HeroSection({
                     [data-testid="hero-pillars-desktop-grid"] {
                       margin-top: clamp(28px, 5.36vh, 48px) !important;
                     }
+                    .hero-flex-spacer {
+                      flex: 1 1 0px;
+                      min-height: 0;
+                    }
                     .hero-bottom-block {
-                      margin-top: auto !important;
                       padding-top: clamp(28px, 5.36vh, 48px) !important;
                     }
                     [data-testid="hero-ctas"] {
@@ -151,6 +154,7 @@ export function HeroSection({
                         <HeroOverlayScrollWrapper>
                             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-full min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-0 min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     <h1
                                         data-testid="hero-headline"
                                         className="hero-headline w-full max-w-full shrink-0 min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
@@ -174,7 +178,8 @@ export function HeroSection({
                                         </p>
                                     )}
                                     <HeroPillars />
-                                    <div className="hero-bottom-block w-full shrink-0 min-[1000px]:mt-auto">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
+                                    <div className="hero-bottom-block w-full shrink-0">
                                     {variantSubheadline ? (
                                         <p
                                             className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:mt-0 min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"

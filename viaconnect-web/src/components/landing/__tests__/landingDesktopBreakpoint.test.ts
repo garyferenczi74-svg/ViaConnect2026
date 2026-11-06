@@ -34,7 +34,8 @@ describe('landing desktop breakpoint', () => {
     expect(hero).toContain('clamp(2.25rem, calc(3.53vh + 16px), 3rem)');
     expect(hero).toContain('clamp(28px, 5.36vh, 48px)');
     expect(hero).toContain('hero-bottom-block');
-    expect(hero).toContain('min-[1000px]:mt-auto');
+    expect(hero).toContain('hero-flex-spacer');
+    expect(hero).toContain('flex: 1 1 0px');
     expect(hero).toContain('data-testid="hero-tagline"');
     expect(hero).toContain('min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)]');
     expect(hero).toContain('LandingHeroCarousel');
