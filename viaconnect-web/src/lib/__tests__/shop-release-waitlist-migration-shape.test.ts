@@ -6,8 +6,9 @@
  *   supabase/migrations/20260926200100_shop_product_waitlist.sql
  *
  * Invariants:
- *   1. Exact file names, and each sorts after every other migration file
- *      present in this tree (predecessor 20260926190000).
+ *   1. Exact file names. A sorts after predecessor 20260926190000, B sorts
+ *      immediately after A, and both sort before the launch vote migrations.
+ *      Later migrations may sort after that chain.
  *   2. Each file sets lock_timeout inside the caller's transaction and does
  *      not COMMIT, so `psql --single-transaction` stays one transaction.
  *   3. Migration A aborts unless 6 active rows and 6 distinct SKUs exist,
@@ -124,7 +125,7 @@ function assertAdditive(sql: string, label: string): void {
   expect(sql, `${label} touches supabase/templates`).not.toMatch(/supabase\/templates/);
 }
 
-describe('shop release migrations sort last with the exact PR 1 names', () => {
+describe('shop release migrations keep the exact PR 1 names and order', () => {
   it('uses the blueprint file names and no other shop release migration', () => {
     const files = migrationFiles();
     expect(files).toContain(MIGRATION_A);
@@ -141,16 +142,22 @@ describe('shop release migrations sort last with the exact PR 1 names', () => {
     const launchVote = [
       '20260930230000_launch_vote_waitlist_columns.sql',
       '20260930230100_launch_vote_plan_codes_email.sql',
-    ];
-    const others = files.filter(
-      (name) => name !== MIGRATION_A && name !== MIGRATION_B && !launchVote.includes(name),
-    );
-    for (const other of others) {
-      expect(MIGRATION_A > other, `${MIGRATION_A} should sort after ${other}`).toBe(true);
-      expect(MIGRATION_B > other, `${MIGRATION_B} should sort after ${other}`).toBe(true);
-    }
+    ] as const;
+    const predecessorIndex = files.indexOf(PREDECESSOR);
+    const indexA = files.indexOf(MIGRATION_A);
+    const indexB = files.indexOf(MIGRATION_B);
+    expect(predecessorIndex).toBeGreaterThanOrEqual(0);
+    expect(indexA, `${MIGRATION_A} should sort after ${PREDECESSOR}`).toBeGreaterThan(predecessorIndex);
+    expect(indexB, `${MIGRATION_B} should sort immediately after ${MIGRATION_A}`).toBe(indexA + 1);
     expect(MIGRATION_A < MIGRATION_B).toBe(true);
-    expect(files.slice(-4)).toEqual([MIGRATION_A, MIGRATION_B, ...launchVote]);
+    let previous = indexB;
+    for (const vote of launchVote) {
+      const voteIndex = files.indexOf(vote);
+      expect(voteIndex, `${MIGRATION_B} should sort before ${vote}`).toBeGreaterThan(previous);
+      expect(MIGRATION_B < vote).toBe(true);
+      previous = voteIndex;
+    }
+    expect(files.indexOf(launchVote[1])).toBe(files.indexOf(launchVote[0]) + 1);
   });
 });
 
