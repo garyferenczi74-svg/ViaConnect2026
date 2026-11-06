@@ -99,14 +99,23 @@ export function HeroSection({
                     }
                     .hero-subtitle,
                     .hero-tagline {
-                      margin-top: 0 !important;
                       line-height: 1.25 !important;
                     }
                     .hero-subtitle {
                       font-size: clamp(0.75rem, 1.78vh, 1rem) !important;
+                      margin-top: clamp(14px, 4.11vh, 40px) !important;
+                    }
+                    .hero-tagline {
+                      margin-top: clamp(20px, 5.36vh, 52px) !important;
+                    }
+                    [data-testid="hero-pillars-desktop-grid"] {
+                      margin-top: clamp(16px, 2.86vh, 28px) !important;
+                    }
+                    [data-testid="hero-ctas"] {
+                      margin-top: clamp(14px, 4.11vh, 40px) !important;
                     }
                     [data-testid="hero-ctas"] a {
-                      height: clamp(1.875rem, 5.33vh, 3rem) !important;
+                      height: clamp(2.25rem, calc(3.53vh + 16px), 3rem) !important;
                     }
                     .pillar-title {
                       font-size: clamp(0.875rem, min(1.9vw, 2.67vh), 1.5rem) !important;
@@ -136,7 +145,7 @@ export function HeroSection({
                         style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem))' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(8px,calc(4.12vh-19px),18px)] min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-0 min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
                                         data-testid="hero-headline"

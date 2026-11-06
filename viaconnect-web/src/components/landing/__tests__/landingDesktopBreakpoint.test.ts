@@ -31,7 +31,8 @@ describe('landing desktop breakpoint', () => {
     expect(hero).toContain('clamp(1.75rem, min(5.5vw, 8vh), 4.5rem)');
     expect(hero).toContain('clamp(14px, 1.78vh, 1rem)');
     expect(hero).toContain('var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem)');
-    expect(hero).toContain('clamp(1.875rem, 5.33vh, 3rem)');
+    expect(hero).toContain('clamp(2.25rem, calc(3.53vh + 16px), 3rem)');
+    expect(hero).toContain('clamp(16px, 2.86vh, 28px)');
     expect(hero).toContain('data-testid="hero-tagline"');
     expect(hero).toContain('min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)]');
     expect(hero).toContain('LandingHeroCarousel');
