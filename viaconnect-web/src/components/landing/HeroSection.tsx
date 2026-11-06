@@ -87,9 +87,10 @@ export function HeroSection({
                     .hero-screen,
                     .hero-fold {
                       box-sizing: border-box !important;
-                      height: 100svh !important;
-                      min-height: 100svh !important;
-                      max-height: 100svh !important;
+                      height: 100svh;
+                      height: min(100svh, 100dvh) !important;
+                      min-height: 0 !important;
+                      max-height: min(100svh, 100dvh) !important;
                       overflow: hidden !important;
                     }
                     .hero-headline {
@@ -119,7 +120,8 @@ export function HeroSection({
                       min-height: 0;
                     }
                     .hero-bottom-block .hero-flex-spacer {
-                      min-height: clamp(21px, calc(3.24vh + 3px), 48px);
+                      flex: 1 1 clamp(21px, calc(3.24vh + 3px), 48px);
+                      min-height: 0;
                     }
                     [data-testid="hero-ctas"] {
                       margin-top: 0 !important;
