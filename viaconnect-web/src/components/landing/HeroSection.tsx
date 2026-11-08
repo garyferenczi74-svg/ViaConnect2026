@@ -83,6 +83,26 @@ export function HeroSection({
     return (
         <div className="hero-screen flex min-h-[100svh] flex-col relative">
                 <style>{`
+                  /* Heading stays 1.2x the description at every height:
+                     14.4/12, 1.8/1.5, and 16.8/14. Mobile and desktop share it. */
+                  .pillar-title {
+                    font-size: clamp(14.4px, 1.8vh, 16.8px) !important;
+                    line-height: 1.25 !important;
+                    margin-bottom: clamp(2px, 0.35vh, 6px) !important;
+                  }
+                  .pillar-body {
+                    font-size: clamp(12px, 1.5vh, 14px) !important;
+                    line-height: 1.28 !important;
+                  }
+                  .pillar-inner {
+                    min-height: 0 !important;
+                    padding: clamp(5px, 1.15vh, 12px) clamp(10px, 1.1vw, 16px) !important;
+                  }
+                  .pillar-numeral {
+                    top: 8px !important;
+                    right: 14px !important;
+                    font-size: clamp(2.25rem, 7vh, 3.75rem) !important;
+                  }
                   @media (min-width: 1000px) {
                     .hero-screen,
                     .hero-fold {
@@ -106,22 +126,23 @@ export function HeroSection({
                       font-size: clamp(0.75rem, 1.78vh, 1rem) !important;
                       margin-top: clamp(12px, 4.4vh, 32px) !important;
                     }
+                    /* Cards, tagline, and buttons keep the same vh gap.
+                       Fixed basis so the two sides of the tagline cannot drift. */
                     [data-testid="hero-pillars-desktop-grid"] {
-                      margin-top: clamp(28px, 5.36vh, 48px) !important;
+                      margin-top: 0 !important;
+                      margin-bottom: 0 !important;
                     }
                     .hero-flex-spacer {
                       flex: 1 1 0px;
                       min-height: 0;
                     }
                     .hero-bottom-block {
-                      flex: 1 1 auto !important;
-                      display: flex;
-                      flex-direction: column;
-                      min-height: 0;
+                      display: contents;
                     }
-                    .hero-bottom-block .hero-flex-spacer {
-                      flex: 1 1 clamp(21px, calc(3.24vh + 3px), 48px);
-                      min-height: 0;
+                    .hero-equal-spacer {
+                      flex: 0 0 clamp(28px, 5.6vh, 56px);
+                      height: clamp(28px, 5.6vh, 56px);
+                      min-height: clamp(28px, 5.6vh, 56px);
                     }
                     [data-testid="hero-ctas"] {
                       margin-top: 0 !important;
@@ -130,23 +151,18 @@ export function HeroSection({
                       margin-top: clamp(16px, 3.2vh, 20px) !important;
                     }
                     [data-testid="hero-ctas"] a {
-                      height: clamp(2.25rem, calc(3.53vh + 16px), 3rem) !important;
+                      height: clamp(1.75rem, calc(2.6vh + 11px), 2.375rem) !important;
+                      padding-left: clamp(16px, 1.6vw, 22px) !important;
+                      padding-right: clamp(16px, 1.6vw, 22px) !important;
+                      font-size: clamp(13px, 1.45vh, 14.5px) !important;
                     }
-                    .pillar-title {
-                      font-size: clamp(0.875rem, min(1.9vw, 2.67vh), 1.5rem) !important;
-                      line-height: 1.15 !important;
-                    }
-                    .pillar-body {
-                      font-size: clamp(14px, 1.78vh, 1rem) !important;
-                      line-height: 1.35 !important;
-                    }
-                    .pillar-inner {
-                      padding: clamp(8px, calc(4.71vh - 16px), 26px) clamp(12px, 1.95vw, 28px) !important;
+                    [data-testid="hero-ctas"] a:first-child {
+                      padding-right: clamp(12px, 1.15vw, 16px) !important;
                     }
                     .pillar-numeral {
-                      top: clamp(4px, 0.9vh, 12px) !important;
-                      right: clamp(8px, 0.9vw, 16px) !important;
-                      font-size: clamp(1.5rem, min(6vw, 8vh), 6.875rem) !important;
+                      top: clamp(8px, 1vh, 12px) !important;
+                      right: clamp(12px, 1.1vw, 18px) !important;
+                      font-size: clamp(1.25rem, min(4.2vw, 5.4vh), 4.25rem) !important;
                     }
                   }
                 `}</style>
@@ -185,9 +201,10 @@ export function HeroSection({
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                         </p>
                                     )}
+                                    <div aria-hidden="true" className="hero-equal-spacer hidden min-[1000px]:block" />
                                     <HeroPillars />
                                     <div className="hero-bottom-block w-full shrink-0">
-                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
+                                    <div aria-hidden="true" className="hero-equal-spacer hidden min-[1000px]:block" />
                                     {variantSubheadline ? (
                                         <p
                                             className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:mt-0 min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
@@ -204,22 +221,22 @@ export function HeroSection({
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
-                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
+                                    <div aria-hidden="true" className="hero-equal-spacer hidden min-[1000px]:block" />
                                     <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
-                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                            className="inline-flex h-11 min-[1000px]:h-[clamp(1.75rem,calc(2.6vh+11px),2.375rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-5 pr-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                             <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
-                                            <ChevronRight strokeWidth={1.5} className="ml-1" />
+                                            <ChevronRight strokeWidth={1.5} className="ml-1 h-[18px] w-[18px]" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-11 min-[1000px]:h-[clamp(1.75rem,calc(2.6vh+11px),2.375rem)] w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
                                             href="/practitioners"
-                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            className="order-1 sm:order-2 inline-flex h-11 min-[1000px]:h-[clamp(1.75rem,calc(2.6vh+11px),2.375rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>

@@ -4,6 +4,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const FOLDS = [
+  { width: 1007, height: 520 },
   { width: 1007, height: 560 },
   { width: 1280, height: 720 },
   { width: 1366, height: 768 },
@@ -90,11 +91,32 @@ test.describe('landing hero one viewport', () => {
 
       await heroFits(page, height);
 
-      if (width === 1007 && height === 560) {
-        const bodySize = await page.locator('.pillar-body').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-        expect(bodySize).toBeGreaterThanOrEqual(13);
-        expect(bodySize).toBeLessThanOrEqual(14.5);
+      const titleSize = await page.locator('.pillar-title:visible').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      const bodySize = await page.locator('.pillar-body:visible').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(titleSize).toBeGreaterThan(bodySize);
+      expect(titleSize / bodySize).toBeGreaterThanOrEqual(1.15);
+      expect(titleSize / bodySize).toBeLessThanOrEqual(1.25);
+
+      const cardsBox = await page.locator('[data-testid="hero-pillars-desktop-grid"]').boundingBox();
+      const taglineBox = await page.getByTestId('hero-tagline').boundingBox();
+      const ctasBox = await page.getByTestId('hero-ctas').boundingBox();
+      expect(cardsBox).not.toBeNull();
+      expect(taglineBox).not.toBeNull();
+      expect(ctasBox).not.toBeNull();
+      if (cardsBox && taglineBox && ctasBox) {
+        const aboveTagline = taglineBox.y - (cardsBox.y + cardsBox.height);
+        const belowTagline = ctasBox.y - (taglineBox.y + taglineBox.height);
+        expect(Math.abs(aboveTagline - belowTagline)).toBeLessThanOrEqual(2);
+        expect(aboveTagline).toBeGreaterThanOrEqual(24);
       }
+
+      const button = page.getByTestId('hero-ctas').locator('a').first();
+      const buttonHeight = await button.evaluate((el) => parseFloat(getComputedStyle(el).height));
+      const buttonFont = await button.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(buttonHeight).toBeGreaterThanOrEqual(28);
+      expect(buttonHeight).toBeLessThanOrEqual(38);
+      expect(buttonFont).toBeGreaterThanOrEqual(13);
+      expect(buttonFont).toBeLessThanOrEqual(14.5);
 
       const ticker = await page.getByTestId('hero-ticker').boundingBox();
       expect(ticker).not.toBeNull();
