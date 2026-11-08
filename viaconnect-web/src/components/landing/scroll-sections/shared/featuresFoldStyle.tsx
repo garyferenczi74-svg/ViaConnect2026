@@ -59,6 +59,25 @@ export function FeaturesFoldStyle() {
               font-size: clamp(13px, 2.4vh, 20px) !important;
             }
           }
+          /* Wider desktops can carry a larger plate. 1007px stays on the
+             short-laptop clamp above. */
+          @media (min-width: 1200px) {
+            #features .features-heading {
+              font-size: clamp(2.5rem, 4.8vh, 3.75rem) !important;
+            }
+            #features .features-subtitle {
+              font-size: clamp(1.05rem, 2vh, 1.35rem) !important;
+            }
+          }
+          @media (min-width: 1440px) {
+            #features {
+              --features-card-h: clamp(400px, calc(100dvh - 5rem - 280px), 540px);
+              --features-card-w: clamp(360px, 22vw, 440px);
+            }
+            #features .features-card-title {
+              font-size: clamp(18px, 2vh, 22px) !important;
+            }
+          }
         `}</style>
     )
 }
