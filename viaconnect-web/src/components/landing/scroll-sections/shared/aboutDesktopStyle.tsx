@@ -34,29 +34,32 @@ export function AboutDesktopStyle() {
             }
             #about .about-team {
               max-width: none !important;
+              align-items: start;
               gap: clamp(20px, 1.8vw, 36px) !important;
               margin-bottom: clamp(24px, 3vh, 44px) !important;
             }
             #about .about-card,
             #about .about-leadership {
-              padding: clamp(28px, 2.2vw, 44px) !important;
+              padding: clamp(36px, 2.6vw, 52px) !important;
             }
             #about .about-leadership {
               max-width: none !important;
               margin-bottom: clamp(40px, 5vh, 80px) !important;
             }
             #about .about-name {
-              font-size: clamp(1.5rem, 1.7vw, 2rem) !important;
-              margin-bottom: 6px !important;
+              font-size: clamp(1.85rem, 2vw, 2.45rem) !important;
+              line-height: 1.2 !important;
+              margin-bottom: 10px !important;
             }
             #about .about-role {
-              font-size: clamp(0.85rem, 0.95vw, 1rem) !important;
-              margin-bottom: clamp(14px, 1.6vh, 22px) !important;
+              font-size: clamp(0.95rem, 1.05vw, 1.15rem) !important;
+              line-height: 1.3 !important;
+              margin-bottom: clamp(18px, 2vh, 28px) !important;
             }
             #about .about-bio,
             #about .about-leadership p {
-              font-size: clamp(1.05rem, 1.15vw, 1.25rem) !important;
-              line-height: 1.6 !important;
+              font-size: clamp(1.25rem, 1.4vw, 1.65rem) !important;
+              line-height: 1.65 !important;
             }
             #about .about-quote {
               padding-left: clamp(24px, 2vw, 40px) !important;

@@ -32,14 +32,17 @@ test.describe('about desktop scale', () => {
       const measured = await page.evaluate(() => {
         const heading = getComputedStyle(document.querySelector('#about h2') as Element).fontSize
         const lead = getComputedStyle(document.querySelector('#about .about-lead') as Element).fontSize
+        const bio = getComputedStyle(document.querySelector('#about .about-bio') as Element).fontSize
         return {
           heading: parseFloat(heading),
           lead: parseFloat(lead),
+          bio: parseFloat(bio),
           overflow: document.documentElement.scrollWidth - window.innerWidth,
         }
       })
       expect(measured.heading).toBe(viewport.heading)
       expect(measured.lead).toBe(viewport.lead)
+      expect(measured.bio).toBe(14)
       expect(measured.overflow).toBeLessThanOrEqual(1)
     })
   }
@@ -71,7 +74,11 @@ test.describe('about desktop scale', () => {
       })
       expect(measured.heading, `${viewport.width} heading`).toBeGreaterThan(48)
       expect(measured.lead, `${viewport.width} lead`).toBeGreaterThan(18)
-      expect(measured.bio, `${viewport.width} bio`).toBeGreaterThan(16)
+      expect(measured.bio, `${viewport.width} bio`).toBeGreaterThanOrEqual(20)
+      const name = await page.locator('#about .about-name').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize))
+      const nameLine = await page.locator('#about .about-name').first().evaluate((el) => parseFloat(getComputedStyle(el).lineHeight))
+      expect(name, `${viewport.width} name`).toBeGreaterThanOrEqual(29)
+      expect(nameLine, `${viewport.width} name line`).toBeGreaterThan(name)
       expect(measured.cardW, `${viewport.width} card`).toBeGreaterThan(520)
       expect(measured.quote, `${viewport.width} quote`).toBeGreaterThan(24)
       expect(measured.quoteOverflow).toBeLessThanOrEqual(1)
