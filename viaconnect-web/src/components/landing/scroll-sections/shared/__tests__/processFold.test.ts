@@ -4,6 +4,7 @@ import {
     nextProcessStep,
     shouldRunProcessAutoplay,
 } from '@/components/landing/scroll-sections/shared/process-step-cycle'
+import { tierIndexForStep } from '@/components/landing/scroll-sections/shared/processTierCards'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -94,7 +95,13 @@ describe('process fold', () => {
         expect(STEPS).not.toContain('FluidHoverHighlight')
         expect(STEPS).toContain('scale-[1.08]')
         expect(STEPS).toContain('data-icon-active')
-        expect(STEPS).toContain('group-focus-visible:outline-[#2DA5A0]')
+        expect(STEPS).toContain('data-tier')
+        expect(STEPS).toContain('tierIndexForStep')
+        expect(FOLD).toContain('visibility: hidden')
+        expect(FOLD).toContain(':focus-visible .process-optional')
+        expect(FOLD).toContain('OLIVE_GREEN')
+        expect(FOLD).toContain('accent.primary')
+        expect(FOLD).toContain('data-active-index')
         expect(STEPS).not.toMatch(/\bany\b/)
     })
 
@@ -122,5 +129,8 @@ describe('process fold', () => {
         expect(shouldRunProcessAutoplay({ ...live, inView: false })).toBe(false)
         expect(shouldRunProcessAutoplay({ ...live, tabVisible: false })).toBe(false)
         expect(shouldRunProcessAutoplay({ ...live, interacting: true })).toBe(false)
+        expect([0, 1, 2].map(tierIndexForStep)).toEqual([0, 0, 0])
+        expect([3, 4].map(tierIndexForStep)).toEqual([1, 1])
+        expect([5, 6].map(tierIndexForStep)).toEqual([2, 2])
     })
 })
