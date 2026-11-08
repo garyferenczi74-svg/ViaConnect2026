@@ -62,7 +62,9 @@ describe('process fold', () => {
         ]) {
             expect(STEPS).toContain(label)
         }
-        expect(STEPS).toContain("sub: ['Physical', 'Neuro', 'Emotional']")
+        expect(STEPS).not.toContain('Physical')
+        expect(STEPS).not.toContain('Neuro')
+        expect(STEPS).not.toContain('Emotional')
         expect(STEPS).toContain('Optional')
         expect(STEPS).toContain('strokeWidth={1.5}')
         expect(STEPS).toContain('min-[1000px]:grid-cols-7')
@@ -76,8 +78,10 @@ describe('process fold', () => {
         expect(STEPS).toContain('visibilitychange')
         expect(STEPS).toContain('clearTimeout')
         expect(STEPS).toContain("'(prefers-reduced-motion: reduce)'")
-        expect(STEPS).toContain('FluidHoverHighlight')
-        expect(STEPS).toContain('focus-visible:outline-[#2DA5A0]')
+        expect(STEPS).not.toContain('FluidHoverHighlight')
+        expect(STEPS).toContain('scale-[1.08]')
+        expect(STEPS).toContain('data-icon-active')
+        expect(STEPS).toContain('group-focus-visible:outline-[#2DA5A0]')
         expect(STEPS).not.toMatch(/\bany\b/)
     })
 

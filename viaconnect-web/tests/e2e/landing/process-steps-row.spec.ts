@@ -155,10 +155,11 @@ test.describe('process assessment row', () => {
         fullPage: false,
       })
 
-      await expect(page.getByText('Physical', { exact: true })).toBeVisible()
-      await expect(page.getByText('Neuro', { exact: true })).toBeVisible()
-      await expect(page.getByText('Emotional', { exact: true })).toBeVisible()
+      await expect(page.getByText('Physical', { exact: true })).toHaveCount(0)
+      await expect(page.getByText('Neuro', { exact: true })).toHaveCount(0)
+      await expect(page.getByText('Emotional', { exact: true })).toHaveCount(0)
       await expect(page.getByText('Optional', { exact: true })).toHaveCount(2)
+      await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
 
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
       const clientWidth = await page.evaluate(() => document.documentElement.clientWidth)
@@ -170,21 +171,20 @@ test.describe('process assessment row', () => {
     await page.setViewportSize({ width: 1007, height: 520 })
     await openProcess(page)
 
-    const highlight = page.locator('[data-slot="fluid-hover-highlight"]')
+    const iconOf = (index: number) => page.getByTestId(`process-step-${index}`).locator('[data-icon-active="true"]')
 
     await page.getByTestId('process-step-0').focus()
     await page.keyboard.press('Tab')
     await expect(page.getByTestId('process-step-1')).toBeFocused()
     await expect(page.getByTestId('process-step-1')).toHaveAttribute('data-active', 'true')
-    await expect(highlight).toBeVisible()
-    await expect.poll(async () => {
-      const glow = await highlight.boundingBox()
-      const step = await page.getByTestId('process-step-1').boundingBox()
-      if (!glow || !step) return 999
-      return Math.abs(glow.x + glow.width / 2 - (step.x + step.width / 2))
-    }).toBeLessThan(16)
+    await expect(iconOf(1)).toBeVisible()
+    const focusRing = await page.getByTestId('process-step-1').locator('.process-icon').evaluate((el) => {
+      const style = getComputedStyle(el)
+      return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 1
+    })
+    expect(focusRing).toBe(true)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_keyboard_focus_1007x520.png',
+      path: '/opt/cursor/artifacts/process_circle_focus_1007x520.png',
       fullPage: false,
     })
 
@@ -193,24 +193,27 @@ test.describe('process assessment row', () => {
       const step = page.getByTestId(`process-step-${index}`)
       await step.hover()
       await expect(step).toHaveAttribute('data-active', 'true')
-      await expect.poll(async () => {
-        const glow = await highlight.boundingBox()
-        const box = await step.boundingBox()
-        if (!glow || !box) return 999
-        return Math.abs(glow.x + glow.width / 2 - (box.x + box.width / 2))
-      }).toBeLessThan(16)
-      const glow = await highlight.boundingBox()
-      expect(glow).not.toBeNull()
-      if (glow) centers.push(glow.x + glow.width / 2)
+      const icon = iconOf(index)
+      await expect(icon).toBeVisible()
+      await expect.poll(async () => icon.evaluate((el) => getComputedStyle(el).transform)).toContain('1.08')
+      const box = await icon.boundingBox()
+      expect(box).not.toBeNull()
+      if (box) centers.push(box.x + box.width / 2)
       if (index === 0) {
         await page.screenshot({
-          path: '/opt/cursor/artifacts/process_hover_step1_1007x520.png',
+          path: '/opt/cursor/artifacts/process_circle_step1_1007x520.png',
           fullPage: false,
         })
       }
-      if (index === 4) {
+      if (index === 3) {
         await page.screenshot({
-          path: '/opt/cursor/artifacts/process_hover_step5_1007x520.png',
+          path: '/opt/cursor/artifacts/process_circle_step4_1007x520.png',
+          fullPage: false,
+        })
+      }
+      if (index === 6) {
+        await page.screenshot({
+          path: '/opt/cursor/artifacts/process_circle_step7_1007x520.png',
           fullPage: false,
         })
       }
@@ -238,7 +241,8 @@ test.describe('process assessment row', () => {
       for (const top of tops) expect(Math.abs(top - tops[0])).toBeLessThanOrEqual(1)
       await page.getByTestId('process-step-4').hover()
       await expect(page.getByTestId('process-step-4')).toHaveAttribute('data-active', 'true')
-      await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toBeVisible()
+      await expect(page.getByTestId('process-step-4').locator('[data-icon-active="true"]')).toBeVisible()
+      await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
       const clientWidth = await page.evaluate(() => document.documentElement.clientWidth)
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1)
@@ -253,34 +257,28 @@ test.describe('process assessment row', () => {
     const steps = page.getByTestId('process-steps')
     await expect(steps).toHaveAttribute('data-autoplay', 'running')
 
-    const highlight = page.locator('[data-slot="fluid-hover-highlight"]')
     const waitForStep = async (index: number) => {
       await expect.poll(async () => {
         const active = await page.getByTestId(`process-step-${index}`).getAttribute('data-active')
         const mode = await steps.getAttribute('data-autoplay')
         return active === 'true' && mode === 'running'
       }, { timeout: 20_000 }).toBe(true)
-      await expect.poll(async () => {
-        const glow = await highlight.boundingBox()
-        const box = await page.getByTestId(`process-step-${index}`).boundingBox()
-        if (!glow || !box) return 999
-        return Math.abs(glow.x + glow.width / 2 - (box.x + box.width / 2))
-      }, { timeout: 2000 }).toBeLessThan(18)
+      await expect(page.getByTestId(`process-step-${index}`).locator('[data-icon-active="true"]')).toBeVisible()
     }
 
     await waitForStep(0)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_autoplay_step1_1007x520.png',
+      path: '/opt/cursor/artifacts/process_circle_auto_step1_1007x520.png',
       fullPage: false,
     })
     await waitForStep(3)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_autoplay_step4_1007x520.png',
+      path: '/opt/cursor/artifacts/process_circle_auto_step4_1007x520.png',
       fullPage: false,
     })
     await waitForStep(6)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_autoplay_step7_1007x520.png',
+      path: '/opt/cursor/artifacts/process_circle_auto_step7_1007x520.png',
       fullPage: false,
     })
     await waitForStep(0)
@@ -301,12 +299,12 @@ test.describe('process assessment row', () => {
     await openProcess(page)
     await page.waitForTimeout(2200)
     await expect(page.getByTestId('process-steps')).toHaveAttribute('data-autoplay', 'off')
-    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
+    await expect(page.locator('[data-icon-active="true"]')).toHaveCount(0)
     await page.getByTestId('process-step-2').hover()
     await expect(page.getByTestId('process-step-2')).toHaveAttribute('data-active', 'true')
-    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toBeVisible()
+    await expect(page.getByTestId('process-step-2').locator('[data-icon-active="true"]')).toBeVisible()
     await page.mouse.move(4, 4)
-    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
+    await expect(page.locator('[data-icon-active="true"]')).toHaveCount(0)
   })
 
   test('mobile carousel snaps one card at a time and the cycle advances slides', async ({ page }) => {
@@ -357,9 +355,10 @@ test.describe('process assessment row', () => {
     await page.getByTestId('process-dot-3').click()
     await expect(page.getByTestId('process-step-3')).toHaveAttribute('data-active', 'true')
     await expect.poll(async () => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(80)
-    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toBeVisible()
+    await expect(page.getByTestId('process-step-3').locator('[data-icon-active="true"]')).toBeVisible()
+    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_carousel_slide4_390.png',
+      path: '/opt/cursor/artifacts/process_circle_carousel_390.png',
       fullPage: false,
     })
 
