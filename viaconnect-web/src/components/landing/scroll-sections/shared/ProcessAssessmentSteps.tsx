@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { Activity, Dna, FlaskConical, Heart, Pill, Sun, User } from 'lucide-react'
+import { Activity, ChevronLeft, ChevronRight, Dna, FlaskConical, Heart, Pill, Sun, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FluidHoverHighlight } from '@/components/ui/fluid-hover-highlight'
 import {
@@ -39,6 +39,21 @@ export const PROCESS_ASSESSMENT_PHASES: readonly ProcessAssessmentPhase[] = [
     { icon: FlaskConical, label: 'Lab Upload', optional: true },
 ]
 
+function nearestSlideIndex(container: HTMLElement): number | null {
+    const slides = container.querySelectorAll<HTMLElement>('[data-fluid-index]')
+    let bestIndex: number | null = null
+    let bestDistance = Number.POSITIVE_INFINITY
+    slides.forEach((slide) => {
+        const distance = Math.abs(slide.offsetLeft - container.scrollLeft)
+        if (distance < bestDistance) {
+            bestDistance = distance
+            const index = Number(slide.dataset.fluidIndex)
+            bestIndex = Number.isInteger(index) ? index : bestIndex
+        }
+    })
+    return bestIndex
+}
+
 function stepAriaLabel(phase: ProcessAssessmentPhase): string {
     const parts = [phase.label]
     if (phase.optional) parts.push('optional')
@@ -48,13 +63,16 @@ function stepAriaLabel(phase: ProcessAssessmentPhase): string {
 
 export function ProcessAssessmentSteps() {
     const containerRef = useRef<HTMLUListElement>(null)
+    const programmaticScroll = useRef(false)
     const hover = useFluidHover(containerRef)
     const [gate, setGate] = useState<AutoplayGate>({
         inView: false,
         tabVisible: true,
         reduceMotion: false,
     })
-    const interacting = hover.source === 'pointer' || hover.source === 'focus'
+    const userScrollRef = useRef(false)
+    const [userScrolling, setUserScrolling] = useState(false)
+    const interacting = hover.source === 'pointer' || hover.source === 'focus' || userScrolling
     const autoplayMode = gate.reduceMotion
         ? 'off'
         : !gate.inView || !gate.tabVisible || interacting
@@ -141,15 +159,89 @@ export function ProcessAssessmentSteps() {
         hover.showAutoStep,
     ])
 
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container || hover.activeIndex === null) return
+        if (userScrollRef.current) return
+        if (window.matchMedia('(min-width: 1000px)').matches) return
+        const slide = container.querySelector<HTMLElement>(`[data-fluid-index="${hover.activeIndex}"]`)
+        if (!slide) return
+        if (Math.abs(container.scrollLeft - slide.offsetLeft) < 2) return
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        programmaticScroll.current = true
+        container.scrollTo({
+            left: slide.offsetLeft,
+            behavior: reduce ? 'auto' : 'smooth',
+        })
+    }, [hover.activeIndex])
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+        const onScroll = () => {
+            if (programmaticScroll.current) return
+            if (window.matchMedia('(min-width: 1000px)').matches) return
+            if (!userScrollRef.current) {
+                userScrollRef.current = true
+                setUserScrolling(true)
+            }
+            const index = nearestSlideIndex(container)
+            if (index === null || index === hover.activeIndex) return
+            hover.syncStep(index)
+        }
+        const onScrollEnd = () => {
+            const wasProgrammatic = programmaticScroll.current
+            programmaticScroll.current = false
+            if (wasProgrammatic) return
+            onScroll()
+            userScrollRef.current = false
+            setUserScrolling(false)
+        }
+        container.addEventListener('scroll', onScroll, { passive: true })
+        container.addEventListener('scrollend', onScrollEnd)
+        return () => {
+            container.removeEventListener('scroll', onScroll)
+            container.removeEventListener('scrollend', onScrollEnd)
+        }
+    }, [hover.activeIndex, hover.syncStep])
+
+    const selectSlide = (index: number, hold: boolean) => {
+        const count = PROCESS_ASSESSMENT_PHASES.length
+        const next = ((index % count) + count) % count
+        if (hold) hover.focusStep(next)
+        else hover.syncStep(next)
+    }
+
+    const activeDot = hover.activeIndex ?? 0
+
     return (
+        <div data-testid="process-carousel" className="min-w-0">
         <ul
             ref={containerRef}
             data-testid="process-steps"
             data-autoplay={autoplayMode}
             data-active-index={hover.activeIndex === null ? '' : String(hover.activeIndex)}
+            aria-roledescription="carousel"
             aria-label="Assessment steps"
-            className="process-step-row relative flex w-full max-w-full flex-col gap-2 min-[1000px]:grid min-[1000px]:grid-cols-7 min-[1000px]:gap-2"
+            className="process-step-row relative flex w-full min-w-0 max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[1000px]:grid min-[1000px]:snap-none min-[1000px]:grid-cols-7 min-[1000px]:overflow-visible min-[1000px]:pb-0"
             {...hover.handlers}
+            onKeyDown={(event) => {
+                if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'Home' && event.key !== 'End') return
+                const target = event.target
+                if (!(target instanceof HTMLElement) || !target.closest('[data-fluid-index]')) return
+                event.preventDefault()
+                const count = PROCESS_ASSESSMENT_PHASES.length
+                const current = hover.activeIndex ?? 0
+                const next = event.key === 'ArrowRight'
+                    ? (current + 1) % count
+                    : event.key === 'ArrowLeft'
+                        ? (current + count - 1) % count
+                        : event.key === 'Home'
+                            ? 0
+                            : count - 1
+                selectSlide(next, true)
+                containerRef.current?.querySelector<HTMLButtonElement>(`[data-testid="process-step-${next}"]`)?.focus()
+            }}
         >
             <div
                 aria-hidden="true"
@@ -169,6 +261,70 @@ export function ProcessAssessmentSteps() {
                 />
             ))}
         </ul>
+        <div
+            data-testid="process-carousel-controls"
+            className="mt-3 flex items-center justify-center gap-3 min-[1000px]:hidden"
+        >
+            <button
+                type="button"
+                data-testid="process-carousel-prev"
+                aria-label="Previous step"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#2DA5A0]/40 bg-[#0d1225] text-[#2DA5A0]"
+                onClick={() => selectSlide(activeDot - 1, false)}
+            >
+                <ChevronLeft strokeWidth={1.5} className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <div role="tablist" aria-label="Choose an assessment step" className="flex items-center gap-1">
+                {PROCESS_ASSESSMENT_PHASES.map((phase, index) => {
+                    const selected = activeDot === index
+                    return (
+                        <button
+                            key={phase.label}
+                            type="button"
+                            role="tab"
+                            data-testid={`process-dot-${index}`}
+                            aria-label={phase.label}
+                            aria-selected={selected}
+                            tabIndex={selected ? 0 : -1}
+                            className="inline-flex h-11 w-6 items-center justify-center"
+                            onClick={() => selectSlide(index, false)}
+                            onFocus={() => hover.focusStep(index)}
+                            onBlur={(event) => {
+                                const next = event.relatedTarget
+                                if (next instanceof Element && next.closest('[data-testid="process-carousel-controls"]')) return
+                                hover.blurStep()
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+                                event.preventDefault()
+                                const delta = event.key === 'ArrowRight' ? 1 : -1
+                                const count = PROCESS_ASSESSMENT_PHASES.length
+                                const next = (index + delta + count) % count
+                                selectSlide(next, true)
+                                event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-testid="process-dot-${next}"]`)?.focus()
+                            }}
+                        >
+                            <span
+                                className={cn(
+                                    'block h-1.5 rounded-full',
+                                    selected ? 'w-4 bg-[#2DA5A0]' : 'w-1.5 bg-white/30',
+                                )}
+                            />
+                        </button>
+                    )
+                })}
+            </div>
+            <button
+                type="button"
+                data-testid="process-carousel-next"
+                aria-label="Next step"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#2DA5A0]/40 bg-[#0d1225] text-[#2DA5A0]"
+                onClick={() => selectSlide(activeDot + 1, false)}
+            >
+                <ChevronRight strokeWidth={1.5} className="h-5 w-5" aria-hidden="true" />
+            </button>
+        </div>
+        </div>
     )
 }
 
@@ -190,14 +346,17 @@ function ProcessAssessmentStep({
         <li
             ref={itemRef}
             data-fluid-index={index}
-            className="relative z-10 w-full min-w-0 min-[1000px]:w-auto"
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${index + 1} of ${PROCESS_ASSESSMENT_PHASES.length}`}
+            className="relative z-10 w-[80%] shrink-0 snap-start min-[1000px]:w-auto min-[1000px]:shrink"
         >
             <button
                 type="button"
                 data-testid={`process-step-${index}`}
                 data-active={active ? 'true' : 'false'}
                 aria-label={stepAriaLabel(phase)}
-                className="process-step-button flex h-full w-full cursor-pointer flex-row items-center gap-3 rounded-2xl px-3 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0] min-[1000px]:flex-col min-[1000px]:items-center min-[1000px]:gap-0 min-[1000px]:px-1 min-[1000px]:py-2 min-[1000px]:text-center"
+                className="process-step-button flex h-full w-full cursor-pointer flex-row items-center gap-3 rounded-2xl border border-white/10 px-3 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0] min-[1000px]:flex-col min-[1000px]:items-center min-[1000px]:gap-0 min-[1000px]:border-0 min-[1000px]:px-1 min-[1000px]:py-2 min-[1000px]:text-center"
             >
                 <div
                     className={cn(

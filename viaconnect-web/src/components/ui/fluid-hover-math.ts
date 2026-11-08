@@ -47,6 +47,7 @@ export type FluidHoverEvent =
     | { type: 'leave' }
     | { type: 'auto'; index: number }
     | { type: 'autoplay'; enabled: boolean }
+    | { type: 'sync'; index: number }
 
 export interface FluidSpring {
     type: 'spring'
@@ -210,6 +211,18 @@ export function reduceFluidHover(model: FluidHoverModel, event: FluidHoverEvent)
         if (!model.autoplay) return model
         if (model.source === 'pointer' || model.source === 'focus') return model
         if (!Number.isInteger(event.index) || event.index < 0) return model
+        return withActive(model, { source: 'auto', autoIndex: event.index })
+    }
+
+    if (event.type === 'sync') {
+        if (!Number.isInteger(event.index) || event.index < 0) return model
+        if (model.source === 'pointer') {
+            return withActive(model, { pointerIndex: event.index, autoIndex: event.index, source: 'pointer' })
+        }
+        if (model.source === 'focus') {
+            return withActive(model, { focusIndex: event.index, autoIndex: event.index, source: 'focus' })
+        }
+        if (!model.autoplay) return withActive(model, { autoIndex: event.index })
         return withActive(model, { source: 'auto', autoIndex: event.index })
     }
 
