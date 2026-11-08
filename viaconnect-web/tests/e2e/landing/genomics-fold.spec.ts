@@ -82,8 +82,12 @@ test.describe('genomics fold', () => {
       expect(measured.rows).toBe(2)
       expect(measured.panelBottom).toBeLessThanOrEqual(measured.viewport - 8)
       expect(measured.clearance).toBeGreaterThanOrEqual(8)
+      await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
+      await expect(page.getByRole('link', { name: 'Order GeneX360' })).toHaveCount(1)
       await page.screenshot({
-        path: `/opt/cursor/artifacts/genomics_fold_1007x${height}.png`,
+        path: height === 520
+          ? '/opt/cursor/artifacts/genomics_no_explorer_1007x520.png'
+          : `/opt/cursor/artifacts/genomics_fold_1007x${height}.png`,
         fullPage: false,
       })
     })
@@ -110,29 +114,7 @@ test.describe('genomics fold', () => {
       path: '/opt/cursor/artifacts/genomics_cards_hover_1007x520.png',
       fullPage: false,
     })
-
-    await page.evaluate(() => {
-      const card = document.querySelector('[data-testid="explorer-card-GeneXM"]')
-      const nav = document.querySelector('header nav')
-      if (!card || !nav) return
-      const top = card.getBoundingClientRect().top + window.scrollY - nav.getBoundingClientRect().height - 56
-      window.scrollTo({ top, behavior: 'auto' })
-    })
-    await page.waitForTimeout(150)
-    const explorer = page.getByTestId('explorer-card-GeneXM')
-    const explorerReveal = explorer.locator('div.grid')
-    expect(await explorerReveal.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(2)
-    await page.screenshot({
-      path: '/opt/cursor/artifacts/genomics_explorer_rest_1007x520.png',
-      fullPage: false,
-    })
-    await explorer.hover()
-    await expect(explorer).toHaveAttribute('aria-expanded', 'true')
-    await expect.poll(async () => explorerReveal.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThan(12)
-    await page.screenshot({
-      path: '/opt/cursor/artifacts/genomics_explorer_hover_1007x520.png',
-      fullPage: false,
-    })
+    await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
   })
 
   test('390 keeps a stacked genomics section', async ({ page }) => {
@@ -144,8 +126,10 @@ test.describe('genomics fold', () => {
     console.log('genomics-fold 390', JSON.stringify(measured))
     expect(measured.rows).toBeGreaterThanOrEqual(6)
     await expect(page.getByText('PeptideIQ', { exact: true })).toBeVisible()
+    await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Order GeneX360' })).toHaveCount(1)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/genomics_cards_390.png',
+      path: '/opt/cursor/artifacts/genomics_no_explorer_390.png',
       fullPage: false,
     })
   })

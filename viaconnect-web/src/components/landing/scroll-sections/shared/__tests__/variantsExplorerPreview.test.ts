@@ -59,9 +59,9 @@ describe('VariantsExplorerPreview source', () => {
     expect(source).toContain('VARIANTS_EXPLORER_EDUCATIONAL_LINE');
   });
 
-  it('is the only preview chrome for desktop and mobile', () => {
-    expect(mobile).toContain('VariantsExplorerPreview');
-    expect(desktop).toContain('VariantsExplorerPreview');
+  it('stays off the landing genomics sections', () => {
+    expect(mobile).not.toContain('VariantsExplorerPreview');
+    expect(desktop).not.toContain('VariantsExplorerPreview');
     expect(mobile).not.toContain('Your variant');
     expect(desktop).not.toContain('Your variant');
   });
