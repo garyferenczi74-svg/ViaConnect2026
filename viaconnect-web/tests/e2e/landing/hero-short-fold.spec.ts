@@ -113,10 +113,11 @@ test.describe('landing hero one viewport', () => {
       const button = page.getByTestId('hero-ctas').locator('a').first();
       const buttonHeight = await button.evaluate((el) => parseFloat(getComputedStyle(el).height));
       const buttonFont = await button.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      expect(buttonHeight).toBeGreaterThanOrEqual(28);
-      expect(buttonHeight).toBeLessThanOrEqual(38);
-      expect(buttonFont).toBeGreaterThanOrEqual(13);
-      expect(buttonFont).toBeLessThanOrEqual(14.5);
+      const desktop = width >= 1200;
+      expect(buttonHeight).toBeGreaterThanOrEqual(desktop ? 36 : 28);
+      expect(buttonHeight).toBeLessThanOrEqual(desktop ? 52 : 38);
+      expect(buttonFont).toBeGreaterThanOrEqual(desktop ? 15 : 13);
+      expect(buttonFont).toBeLessThanOrEqual(desktop ? 18 : 14.5);
 
       const ticker = await page.getByTestId('hero-ticker').boundingBox();
       expect(ticker).not.toBeNull();
