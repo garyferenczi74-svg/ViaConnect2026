@@ -13,14 +13,33 @@ export function ProcessFoldStyle() {
         <style>{`
           @media (min-width: 1000px) {
             #process {
-              scroll-margin-top: calc(var(--landing-nav-h, 4.75rem) + 6px);
-              padding-top: clamp(6px, 1vh, 14px) !important;
-              padding-bottom: clamp(12px, 2.2vh, 40px) !important;
+              scroll-margin-top: var(--landing-nav-h, 78px);
+              padding-top: 8px !important;
+              padding-bottom: 16px !important;
+              /* One gap for the intro, step row, protocol banner, tier row,
+                 the spaces between steps, and the spaces between tier cards. */
+              --process-gap: clamp(16px, calc(2.2vh + 0.9vw), 40px);
               --process-icon: clamp(32px, 6.4vh, 64px);
               --process-line-y: calc(clamp(4px, 0.7vh, 10px) + var(--process-icon) / 2);
             }
-            #process .process-intro {
-              margin-bottom: clamp(8px, 1.5vh, 28px) !important;
+            #process .process-stack {
+              display: flex;
+              flex-direction: column;
+              min-height: calc(100dvh - var(--landing-nav-h, 78px) - 8px - 22px);
+            }
+            #process .process-gap {
+              flex: 0 0 var(--process-gap);
+              width: 100%;
+              height: var(--process-gap);
+            }
+            #process .process-intro,
+            #process .process-steps,
+            #process .process-note {
+              margin-bottom: 0 !important;
+            }
+            #process .process-step-row,
+            #process .process-tiers {
+              gap: var(--process-gap) !important;
             }
             #process .process-eyebrow {
               font-size: clamp(11px, 1.45vh, 14px) !important;
@@ -34,9 +53,6 @@ export function ProcessFoldStyle() {
             #process .process-subtitle {
               font-size: clamp(0.8rem, 1.85vh, 1.125rem) !important;
               line-height: 1.35 !important;
-            }
-            #process .process-steps {
-              margin-bottom: clamp(8px, 1.4vh, 28px) !important;
             }
             #process .process-step-button {
               padding-top: clamp(4px, 0.7vh, 10px) !important;
@@ -70,14 +86,11 @@ export function ProcessFoldStyle() {
             }
             #process .process-note {
               padding: clamp(8px, 1.3vh, 24px) !important;
-              margin-bottom: clamp(8px, 1.4vh, 28px) !important;
+              margin-bottom: 0 !important;
             }
             #process .process-note p {
               font-size: clamp(12px, 1.6vh, 16px) !important;
               line-height: 1.35 !important;
-            }
-            #process .process-tiers {
-              gap: clamp(8px, 1.2vh, 20px) !important;
             }
             #process .process-tier {
               padding: clamp(8px, 1.5vh, 28px) !important;
@@ -100,10 +113,21 @@ export function ProcessFoldStyle() {
               line-height: 1.35 !important;
             }
           }
+          @media (max-width: 999px) {
+            #process .process-step-row {
+              scroll-snap-type: x mandatory;
+              scroll-padding-inline: 0;
+            }
+            #process .process-step-row > li {
+              scroll-snap-align: start;
+            }
+          }
           @media (prefers-reduced-motion: reduce) {
             #process .process-icon,
-            #process .process-label {
+            #process .process-label,
+            #process .process-step-row {
               transition: none !important;
+              scroll-behavior: auto !important;
             }
           }
         `}</style>

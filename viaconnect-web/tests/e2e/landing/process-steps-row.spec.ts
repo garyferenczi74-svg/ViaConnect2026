@@ -119,8 +119,41 @@ test.describe('process assessment row', () => {
         expect(heading.y).toBeGreaterThanOrEqual(nav.y + nav.height - 1)
       }
       if (tiers) {
-        expect(tiers.y + tiers.height).toBeLessThanOrEqual(height + 1)
+        expect(tiers.y + tiers.height).toBeLessThanOrEqual(height - 16)
       }
+
+      const gaps = await page.evaluate(() => {
+        const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect()
+        const intro = rect('[data-testid="process-intro"]')
+        const steps = rect('.process-steps')
+        const note = rect('[data-testid="process-note"]')
+        const tierRow = rect('[data-testid="process-tiers"]')
+        const cards = [...document.querySelectorAll('.process-tier')].map((el) => el.getBoundingClientRect())
+        const stepBoxes = [...document.querySelectorAll('[data-testid^="process-step-"]')].map((el) => el.getBoundingClientRect())
+        if (!intro || !steps || !note || !tierRow || cards.length < 2 || stepBoxes.length < 2) return null
+        return {
+          introToSteps: steps.top - intro.bottom,
+          stepsToNote: note.top - steps.bottom,
+          noteToTiers: tierRow.top - note.bottom,
+          tierGap: cards[1].left - cards[0].right,
+          stepGap: stepBoxes[1].left - stepBoxes[0].right,
+          clearance: window.innerHeight - tierRow.bottom,
+        }
+      })
+      expect(gaps).not.toBeNull()
+      if (gaps) {
+        expect(Math.abs(gaps.introToSteps - gaps.stepsToNote)).toBeLessThanOrEqual(2)
+        expect(Math.abs(gaps.stepsToNote - gaps.noteToTiers)).toBeLessThanOrEqual(2)
+        expect(gaps.introToSteps).toBeGreaterThanOrEqual(16)
+        expect(gaps.clearance).toBeGreaterThanOrEqual(16)
+        expect(Math.abs(gaps.stepGap - gaps.tierGap)).toBeLessThanOrEqual(2)
+        expect(Math.abs(gaps.stepGap - gaps.introToSteps)).toBeLessThanOrEqual(2)
+      }
+
+      await page.screenshot({
+        path: `/opt/cursor/artifacts/process_gaps_${width}x${height}.png`,
+        fullPage: false,
+      })
 
       await expect(page.getByText('Physical', { exact: true })).toBeVisible()
       await expect(page.getByText('Neuro', { exact: true })).toBeVisible()
@@ -276,44 +309,61 @@ test.describe('process assessment row', () => {
     await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
   })
 
-  test('mobile stacks the steps, cycles them, and keeps a tap highlight', async ({ page }) => {
+  test('mobile carousel snaps one card at a time and the cycle advances slides', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openProcess(page)
 
-    const metrics = await page.getByTestId('process-steps').evaluate((row) => {
-      const items = Array.from(row.querySelectorAll('li')) as HTMLElement[]
+    const row = page.getByTestId('process-steps')
+    const metrics = await row.evaluate((el) => {
+      const items = Array.from(el.querySelectorAll('li')) as HTMLElement[]
+      const first = items[0]
+      const second = items[1]
       return {
-        scrollWidth: row.scrollWidth,
-        clientWidth: row.clientWidth,
-        tops: items.map((item) => item.offsetTop),
-        lefts: items.map((item) => item.offsetLeft),
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
         count: items.length,
+        tops: items.map((item) => item.offsetTop),
+        firstWidth: first?.offsetWidth ?? 0,
+        secondLeft: second?.offsetLeft ?? 0,
+        dots: document.querySelectorAll('[data-testid^="process-dot-"]').length,
       }
     })
     expect(metrics.count).toBe(7)
-    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1)
-    for (let index = 1; index < metrics.tops.length; index += 1) {
-      expect(metrics.tops[index]).toBeGreaterThan(metrics.tops[index - 1] + 8)
-      expect(Math.abs(metrics.lefts[index] - metrics.lefts[0])).toBeLessThanOrEqual(1)
+    expect(metrics.dots).toBe(7)
+    expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth + 40)
+    expect(metrics.firstWidth / metrics.clientWidth).toBeGreaterThan(0.72)
+    expect(metrics.firstWidth / metrics.clientWidth).toBeLessThan(0.9)
+    expect(metrics.secondLeft).toBeLessThan(metrics.clientWidth)
+    for (const top of metrics.tops) {
+      expect(Math.abs(top - metrics.tops[0])).toBeLessThanOrEqual(1)
     }
 
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
     const clientWidth = await page.evaluate(() => document.documentElement.clientWidth)
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1)
 
-    await expect(page.getByTestId('process-steps')).toHaveAttribute('data-autoplay', 'running')
-    await expect.poll(async () => {
-      const value = await page.getByTestId('process-steps').getAttribute('data-active-index')
-      const index = Number(value)
-      return Number.isInteger(index) && index > 0
-    }, { timeout: 16_000 }).toBe(true)
+    await expect(row).toHaveAttribute('data-autoplay', 'running')
+    const firstIndex = await row.getAttribute('data-active-index')
+    await expect.poll(async () => row.getAttribute('data-active-index'), { timeout: 8_000 }).not.toBe(firstIndex)
 
-    await page.getByTestId('process-step-0').click()
+    await page.getByTestId('process-dot-0').click()
     await expect(page.getByTestId('process-step-0')).toHaveAttribute('data-active', 'true')
-    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toBeVisible()
+    await expect.poll(async () => row.evaluate((el) => el.scrollLeft)).toBeLessThan(24)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_mobile_390x844.png',
+      path: '/opt/cursor/artifacts/process_carousel_slide1_390.png',
       fullPage: false,
     })
+
+    await page.getByTestId('process-dot-3').click()
+    await expect(page.getByTestId('process-step-3')).toHaveAttribute('data-active', 'true')
+    await expect.poll(async () => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(80)
+    await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toBeVisible()
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/process_carousel_slide4_390.png',
+      fullPage: false,
+    })
+
+    await page.getByTestId('process-carousel-next').click()
+    await expect(page.getByTestId('process-step-4')).toHaveAttribute('data-active', 'true')
   })
 })

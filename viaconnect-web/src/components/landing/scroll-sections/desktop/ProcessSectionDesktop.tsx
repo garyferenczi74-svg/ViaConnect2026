@@ -35,7 +35,7 @@ export function ProcessSectionDesktop() {
             className="px-5 pt-8 pb-20 md:px-12 md:pt-10 md:pb-32"
         >
             <ProcessFoldStyle />
-            <div className="max-w-7xl mx-auto">
+            <div className="process-stack mx-auto max-w-7xl">
                 <motion.div
                     data-testid="process-intro"
                     initial={{ opacity: 0, y: 40 }}
@@ -61,9 +61,13 @@ export function ProcessSectionDesktop() {
                     </p>
                 </motion.div>
 
+                <div className="process-gap hidden min-[1000px]:block" aria-hidden="true" />
+
                 <div className="process-steps relative mb-12 md:mb-20">
                     <ProcessAssessmentSteps />
                 </div>
+
+                <div className="process-gap hidden min-[1000px]:block" aria-hidden="true" />
 
                 <motion.div
                     data-testid="process-note"
@@ -78,7 +82,9 @@ export function ProcessSectionDesktop() {
                     </p>
                 </motion.div>
 
-                <div data-testid="process-tiers" className="process-tiers grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="process-gap hidden min-[1000px]:block" aria-hidden="true" />
+
+                <div data-testid="process-tiers" className="process-tiers grid grid-cols-1 gap-4 md:grid-cols-3">
                     {TIER_CARDS.map((tier, i) => (
                         <motion.div
                             key={tier.tier}

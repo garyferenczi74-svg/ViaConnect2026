@@ -56,6 +56,10 @@ export interface UseFluidHoverReturn {
     setAutoplay: (enabled: boolean) => void
     /** Glide the idle highlight to a step. Ignored while hovered or focused. */
     showAutoStep: (index: number) => void
+    /** Move the highlight to a step, including while a pointer or focus is active. */
+    syncStep: (index: number) => void
+    focusStep: (index: number) => void
+    blurStep: () => void
 }
 
 function readIndex(container: HTMLElement, clientX: number, clientY: number, rects: Array<ItemRect | null>): number | null {
@@ -134,6 +138,18 @@ export function useFluidHover(containerRef: RefObject<HTMLElement | null>): UseF
         commit({ type: 'auto', index })
     }, [commit])
 
+    const syncStep = useCallback((index: number) => {
+        commit({ type: 'sync', index })
+    }, [commit])
+
+    const focusStep = useCallback((index: number) => {
+        commit({ type: 'focus', index })
+    }, [commit])
+
+    const blurStep = useCallback(() => {
+        commit({ type: 'blur' })
+    }, [commit])
+
     const armTouchRelease = useCallback(() => {
         touchStopRef.current?.()
         const stop = () => {
@@ -202,7 +218,11 @@ export function useFluidHover(containerRef: RefObject<HTMLElement | null>): UseF
             commit({ type: 'focus', index })
             const container = containerRef.current
             if (container && container.scrollWidth > container.clientWidth + 1) {
-                host.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+                const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                container.scrollTo({
+                    left: host.offsetLeft,
+                    behavior: reduce ? 'auto' : 'smooth',
+                })
             }
         },
         onBlurCapture(event) {
@@ -225,6 +245,9 @@ export function useFluidHover(containerRef: RefObject<HTMLElement | null>): UseF
         registerItem,
         setAutoplay,
         showAutoStep,
+        syncStep,
+        focusStep,
+        blurStep,
     }
 }
 

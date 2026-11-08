@@ -117,6 +117,17 @@ describe('fluid hover session', () => {
         expect(wrapped.session).toBe(resumed.session)
     })
 
+    it('follows a swiped slide without dropping the pause', () => {
+        const armed = reduceFluidHover(initialFluidHoverModel(), { type: 'autoplay', enabled: true })
+        const showing = reduceFluidHover(armed, { type: 'auto', index: 1 })
+        const held = reduceFluidHover(showing, { type: 'pointer', index: 1 })
+        const swiped = reduceFluidHover(held, { type: 'sync', index: 2 })
+        expect(swiped.source).toBe('pointer')
+        expect(swiped.activeIndex).toBe(2)
+        expect(swiped.autoIndex).toBe(2)
+        expect(swiped.session).toBe(showing.session)
+    })
+
     it('drops the idle highlight when reduced motion disables the cycle', () => {
         const cycling = reduceFluidHover(
             reduceFluidHover(initialFluidHoverModel(), { type: 'autoplay', enabled: true }),
