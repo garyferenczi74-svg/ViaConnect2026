@@ -93,6 +93,12 @@ test.describe('features coverflow navigation', () => {
     await page.mouse.click(point.x, point.y)
     await expect.poll(async () => activeCardId(page)).not.toBe(before)
 
+    const details = page.locator('#features [data-active="true"] button[aria-expanded]')
+    await details.click()
+    await expect(details).toHaveAttribute('aria-expanded', 'true')
+    await details.click()
+    await expect(details).toHaveAttribute('aria-expanded', 'false')
+
     const live = page.locator('[aria-live="polite"]')
     await expect(live).toHaveClass(/sr-only/)
     await expect(live).toContainText('of')

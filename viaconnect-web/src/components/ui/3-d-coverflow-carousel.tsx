@@ -199,9 +199,23 @@ export function CoverFlowCarousel({
 
     const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
         if (event.pointerType === 'mouse' && event.button !== 0) return
+        if (event.target instanceof Element && event.target.closest('button[aria-expanded]')) {
+            dragStartX.current = null
+            dragStartY.current = null
+            return
+        }
         dragStartX.current = event.clientX
         dragStartY.current = event.clientY
-        event.currentTarget.setPointerCapture(event.pointerId)
+    }
+
+    const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (dragStartX.current === null || dragStartY.current === null) return
+        const dx = event.clientX - dragStartX.current
+        const dy = event.clientY - dragStartY.current
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.setPointerCapture(event.pointerId)
+        }
     }
 
     const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -242,6 +256,7 @@ export function CoverFlowCarousel({
             suppressClick.current = false
             return
         }
+        if (event.target instanceof Element && event.target.closest('button[aria-expanded]')) return
         const index = indexAtClientPoint(event.clientX, event.clientY)
         if (index === null) return
         if (index === nearestCoverflowIndex(progressRef.current, count)) return
@@ -288,6 +303,7 @@ export function CoverFlowCarousel({
                 tabIndex={0}
                 onKeyDown={onStageKeyDown}
                 onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onClick={onStageClick}
                 className={cn(
