@@ -146,8 +146,8 @@ export function PricingCatalogBody({
       </AnimatePresence>
 
       <p className="mt-8 text-center text-[11px] text-white/50 leading-relaxed max-w-2xl mx-auto">
-        Supplement recommendations are informational only and do not replace medical advice. Speak
-        with a qualified healthcare provider before starting new supplements.
+        Supplement recommendations are informational only and do not replace medical advice Speak
+        with a qualified healthcare provider before starting new supplements
       </p>
     </div>
   );
@@ -178,7 +178,7 @@ function CatalogStatus({
       >
         <Loader2 className="mx-auto h-6 w-6 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
         <p className="mt-4 text-sm text-white/70">Loading live membership plans</p>
-        <p className="mt-2 text-xs text-white/50">Prices come from the live catalog. This wait is time limited.</p>
+        <p className="mt-2 text-xs text-white/50">Prices come from the live catalog This wait is time limited</p>
       </div>
     );
   }
@@ -213,7 +213,7 @@ function CatalogStatus({
       >
         <h2 className="text-lg font-semibold text-white">{PLANS_LOAD_FROM_CATALOG_COPY}</h2>
         <p className="mt-2 text-sm text-white/70 max-w-md mx-auto">
-          Membership prices come from the live catalog when it is ready. No placeholder dollars.
+          Membership prices come from the live catalog when it is ready No placeholder dollars
         </p>
         <button
           type="button"
@@ -256,8 +256,8 @@ export function PractitionerComingSoonPanel() {
           Practitioner and Naturopath pricing
         </h3>
         <p className="text-white/70 text-sm leading-relaxed">
-          Practitioner plans are in final review. Join the waitlist and we will notify you when
-          public pricing opens.
+          Practitioner plans are in final review Join the waitlist and we will notify you when
+          public pricing opens
         </p>
         <Link
           href="/practitioners"

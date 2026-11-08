@@ -7,7 +7,7 @@
 export const VARIANTS_EXPLORER_PREVIEW_TITLE = 'Variants Explorer Preview';
 
 export const VARIANTS_EXPLORER_EDUCATIONAL_LINE =
-  'Educational preview. Not a diagnosis and not your genotype.';
+  'Educational preview Not a diagnosis and not your genotype';
 
 export type PreviewVariantState = 'demo' | 'unanalyzed' | 'reference';
 
@@ -23,21 +23,21 @@ export const PREVIEW_VARIANTS: readonly PreviewVariant[] = [
     gene: 'GeneXM',
     variant: 'Methylation and detox SNPs',
     implication:
-      'Educational catalog preview of the GeneXM panel. This is not your call and not a diagnosis.',
+      'Educational catalog preview of the GeneXM panel This is not your call and not a diagnosis',
     state: 'demo',
   },
   {
     gene: 'NutrigenDX',
     variant: 'Nutrient-metabolism SNPs',
     implication:
-      'Educational catalog preview. Empty here is Unanalyzed, not a made-up genotype.',
+      'Educational catalog preview Empty here is Unanalyzed, not a made-up genotype',
     state: 'unanalyzed',
   },
   {
     gene: 'HormoneIQ',
     variant: 'DUTCH markers',
     implication:
-      'HormoneIQ maps DUTCH hormone markers. Reference catalog copy, not your result.',
+      'HormoneIQ maps DUTCH hormone markers Reference catalog copy, not your result',
     state: 'reference',
   },
 ];

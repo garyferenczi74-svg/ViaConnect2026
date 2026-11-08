@@ -10,7 +10,7 @@ export function SiteFooter() {
         <div className="flex flex-col items-center gap-2 md:items-start">
           <ViaConnectLogo size="md" />
           <p className="text-xs text-gray-500">
-            Farmceutica Wellness LLC. All rights reserved {year}.
+            Farmceutica Wellness LLC. All rights reserved {year}
           </p>
           <a
             href="mailto:info@viaconnectapp.com"

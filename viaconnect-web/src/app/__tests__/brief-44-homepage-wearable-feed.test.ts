@@ -24,7 +24,7 @@ function walkFiles(dir: string, acc: string[] = []): string[] {
 }
 
 const HANNAH_LINE =
-  "Connect a device when it's available. Coming soon stays Coming soon. Missing stays UNKNOWN.";
+  "Connect a device when it's available Coming soon stays Coming soon Missing stays UNKNOWN";
 
 const FEATURE_CARDS = src('src/components/landing/scroll-sections/shared/featureCards.ts');
 const HOME_PAGE = src('src/app/page.tsx');

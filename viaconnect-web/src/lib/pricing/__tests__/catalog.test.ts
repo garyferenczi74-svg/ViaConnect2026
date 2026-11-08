@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildPricingPlanCards,
+  withoutSentencePeriods,
   featuresForTier,
   isHelixConsumerPerk,
   parsePricingCatalog,
@@ -184,6 +185,22 @@ describe('Helix consumer perk only if the API already says so', () => {
   it('does not copy Gold Helix onto a family card', () => {
     const names = featuresForTier(familyTier(), [helix]);
     expect(names).not.toContain('Helix Rewards Earning & Redemption');
+  });
+});
+
+describe('withoutSentencePeriods', () => {
+  it('drops sentence periods and keeps decimals and abbreviations', () => {
+    expect(
+      withoutSentencePeriods(
+        'Complete platform for families. 2 adults + 2 children base, with add-ons available. Family Wellness Dashboard.',
+      ),
+    ).toBe(
+      'Complete platform for families 2 adults + 2 children base, with add-ons available Family Wellness Dashboard',
+    );
+    expect(withoutSentencePeriods('Save $12.50 vs monthly')).toBe('Save $12.50 vs monthly');
+    expect(withoutSentencePeriods('Dr. Fadi Dagher leads Farmceutica Wellness LLC. All rights reserved')).toBe(
+      'Dr. Fadi Dagher leads Farmceutica Wellness LLC. All rights reserved',
+    );
   });
 });
 

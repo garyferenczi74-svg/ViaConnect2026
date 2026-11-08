@@ -11,6 +11,20 @@ export const PRICING_CATALOG_TIMEOUT_MS = 8000;
 /** Brief 45: empty catalog or timeout copy. Never invent dollars. */
 export const PLANS_LOAD_FROM_CATALOG_COPY = 'Plans load from the catalog';
 
+const KEPT_ABBREVIATIONS = new Set(['Dr', 'LLC', 'Inc', 'Jr', 'Sr']);
+
+/** Drop sentence-ending periods from catalog copy shown on the landing page. Decimals and short abbreviations stay. */
+export function withoutSentencePeriods(text: string): string {
+  return text
+    .replace(/(^|[^\d.])\.(?=\s|$)/g, (match, prefix: string, offset: number, source: string) => {
+      const word = source.slice(0, offset + prefix.length).match(/[A-Za-z]+$/)?.[0] ?? '';
+      if (KEPT_ABBREVIATIONS.has(word)) return match;
+      return prefix;
+    })
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
 export const MEMBERSHIP_TIER_CATALOG_COLUMNS =
   'id, display_name, tier_level, monthly_price_cents, annual_price_cents, annual_savings_cents, description, is_family_tier, base_adults_included, base_children_included, max_adults_allowed, additional_adult_price_cents, additional_children_chunk_price_cents, children_chunk_size, sort_order';
 
@@ -172,12 +186,12 @@ export function parsePublicPricingFeature(value: unknown): PublicPricingFeature 
 
 export function parsePricingCatalog(value: unknown): PricingCatalog {
   if (!isRecord(value)) {
-    throw new PricingCatalogError('Live membership catalog was empty or unreadable.', 502);
+    throw new PricingCatalogError('Live membership catalog was empty or unreadable', 502);
   }
   const rawTiers = Array.isArray(value.tiers) ? value.tiers : null;
   const rawFeatures = Array.isArray(value.features) ? value.features : null;
   if (!rawTiers || !rawFeatures) {
-    throw new PricingCatalogError('Live membership catalog was empty or unreadable.', 502);
+    throw new PricingCatalogError('Live membership catalog was empty or unreadable', 502);
   }
   const tiers = rawTiers
     .map(parsePublicMembershipTier)
@@ -216,7 +230,7 @@ export function featuresForTier(
     })
     .slice()
     .sort((a, b) => a.id.localeCompare(b.id))
-    .map((feature) => feature.display_name);
+    .map((feature) => withoutSentencePeriods(feature.display_name));
 }
 
 function familyAddOnFor(tier: PublicMembershipTier): FamilyAddOnDisplay | null {
@@ -236,7 +250,7 @@ export function buildPricingPlanCards(catalog: PricingCatalog): PricingPlanCardM
   return catalog.tiers.map((tier) => ({
     id: tier.id,
     displayName: tier.display_name,
-    description: tier.description,
+    description: tier.description == null ? null : withoutSentencePeriods(tier.description),
     monthlyPriceCents: tier.monthly_price_cents,
     annualPriceCents: tier.annual_price_cents,
     annualSavingsCents: Math.max(0, tier.annual_savings_cents ?? 0),
@@ -292,7 +306,7 @@ export async function loadPricingCatalog(
   } catch (error) {
     if (isTimeoutError(error)) {
       throw new PricingCatalogError(
-        'Live membership prices took too long to load. Please try again.',
+        'Live membership prices took too long to load Please try again',
         503,
       );
     }
@@ -304,7 +318,7 @@ export async function loadPricingCatalog(
       error: tiersResult.error,
     });
     throw new PricingCatalogError(
-      'We could not load live membership prices. Please try again.',
+      'We could not load live membership prices Please try again',
       500,
     );
   }

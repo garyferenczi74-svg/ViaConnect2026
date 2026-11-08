@@ -26,7 +26,7 @@ export function FinalCTAMobile() {
                     Your protocol is waiting
                 </h2>
                 <p className="text-white/70 text-base leading-relaxed mb-10">
-                    Take the assessment. Get your personalized protocol within minutes. Add genetics or labs anytime to deepen your protocol.
+                    Take the assessment Get your personalized protocol within minutes Add genetics or labs anytime to deepen your protocol
                 </p>
                 <div className="flex flex-col items-stretch gap-4 mb-8">
                     <Link
@@ -45,7 +45,7 @@ export function FinalCTAMobile() {
                     </Link>
                 </div>
                 <p className="text-white/50 text-xs">
-                    No subscription required. Private and secure. Your data, your control.
+                    No subscription required Private and secure Your data, your control
                 </p>
             </motion.div>
         </SectionAnchor>

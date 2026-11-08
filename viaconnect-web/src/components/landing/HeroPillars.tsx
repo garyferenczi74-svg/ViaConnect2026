@@ -36,7 +36,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Discovery',
     ariaChapter: 'Chapter one, discovery',
     headline: 'Your Story',
-    body: 'In 8 minutes, our onboarding assessment captures 200+ biological data points and translates them into a precision wellness protocol built for your unique physiology.',
+    body: 'In 8 minutes, our onboarding assessment captures 200+ biological data points and translates them into a precision wellness protocol built for your unique physiology',
     accent: OLIVE_GREEN,
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(69,122,0,0.06), transparent 60%)',
@@ -46,7 +46,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Precision',
     ariaChapter: 'Chapter two, precision',
     headline: 'Your Biology',
-    body: 'Layer in your genetics, lab markers, and current supplement stack. Every additional data layer refines your protocol, transforming general guidance into recommendations engineered for your exact physiology.',
+    body: 'Layer in your genetics, lab markers, and current supplement stack Every additional data layer refines your protocol, transforming general guidance into recommendations engineered for your exact physiology',
     accent: TEAL,
     surfaceOverlay:
       'linear-gradient(135deg, rgba(45,165,160,0.05) 0%, rgba(226,122,44,0.05) 100%)',
@@ -56,7 +56,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Transformation',
     ariaChapter: 'Chapter three, transformation',
     headline: 'Your Protocol',
-    body: 'Personalized precision-formulated protocols specifying every product, dose, and administration window, calibrated to your physiology.',
+    body: 'Personalized precision-formulated protocols specifying every product, dose, and administration window, calibrated to your physiology',
     accent: ORANGE,
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(226,122,44,0.06), transparent 60%)',
