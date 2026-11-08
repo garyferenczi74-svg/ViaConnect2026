@@ -36,10 +36,10 @@ export function GenomicsFoldStyle() {
             #genomics .genomics-panels {
               grid-template-columns: repeat(3, minmax(0, 1fr));
               gap: clamp(8px, 1vh, 12px) !important;
-              margin-bottom: clamp(8px, 1vh, 12px) !important;
+              margin-bottom: clamp(28px, 3.2vh, 36px) !important;
             }
             #genomics .genomics-panel {
-              height: clamp(112px, calc((100dvh - var(--landing-nav-h, 78px) - 210px) / 2), 190px);
+              height: clamp(104px, calc((100dvh - var(--landing-nav-h, 78px) - 230px) / 2), 180px);
               padding: clamp(10px, 1.4vh, 16px) !important;
               overflow: hidden;
             }

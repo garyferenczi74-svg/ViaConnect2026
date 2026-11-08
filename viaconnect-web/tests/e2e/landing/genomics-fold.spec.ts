@@ -82,10 +82,19 @@ test.describe('genomics fold', () => {
       expect(measured.rows).toBe(2)
       expect(measured.panelBottom).toBeLessThanOrEqual(measured.viewport - 8)
       expect(measured.clearance).toBeGreaterThanOrEqual(8)
-      const actionsBottom = await page.locator('.genomics-actions').evaluate((el) => el.getBoundingClientRect().bottom)
+      const actionsBox = await page.locator('.genomics-actions').evaluate((el) => {
+        const actions = el.getBoundingClientRect()
+        const panels = document.querySelector('.genomics-panels')?.getBoundingClientRect()
+        return {
+          bottom: Math.round(actions.bottom * 10) / 10,
+          gap: panels ? Math.round((actions.top - panels.bottom) * 10) / 10 : null,
+        }
+      })
       if (height === 520) {
-        expect(actionsBottom).toBeLessThanOrEqual(height - 8)
-        console.log(`genomics-actions 520 bottom ${Math.round(actionsBottom * 10) / 10}`)
+        expect(actionsBox.bottom).toBeLessThanOrEqual(height - 16)
+        expect(actionsBox.gap).toBeGreaterThanOrEqual(28)
+        expect(actionsBox.gap).toBeLessThanOrEqual(36)
+        console.log(`genomics-actions 520`, JSON.stringify(actionsBox))
       }
       await page.screenshot({
         path: height === 520
