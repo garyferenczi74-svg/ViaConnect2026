@@ -178,13 +178,24 @@ export function ProcessFoldStyle() {
               height: auto;
               max-height: none;
             }
-            #process .process-tier,
-            #process .pillar-card,
-            #process .pillar-inner {
+            /* Match the tallest card. The row stays content-sized, so the
+               extra space is only the difference in copy, not the viewport. */
+            #process .process-tier {
+              display: flex;
+              height: auto;
+            }
+            #process .pillar-card {
+              display: flex;
+              flex: 1 1 auto;
+              width: 100%;
               height: auto;
             }
             #process .pillar-inner {
-              min-height: 0 !important;
+              flex: 1 1 auto;
+              width: 100%;
+              height: auto;
+              min-height: 100%;
+              box-sizing: border-box;
               padding: clamp(22px, 1.8vw, 32px) clamp(20px, 1.5vw, 28px) !important;
             }
             #process .pillar-eyebrow {

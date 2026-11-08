@@ -98,6 +98,26 @@ test.describe('landing desktop scale', () => {
       expect(tier.height, `${viewport.width} tier`).toBeLessThanOrEqual(360)
       expect(tier.clipped, `${viewport.width} tier clip`).toBeLessThanOrEqual(1)
       expect(tier.bottom, `${viewport.width} tier bottom`).toBeLessThanOrEqual(viewport.height - 8)
+      const tiers = await page.locator('#process .process-tier').evaluateAll((els) =>
+        els.map((el) => {
+          const box = el.getBoundingClientRect()
+          return { w: Math.round(box.width), h: Math.round(box.height), layoutH: (el as HTMLElement).offsetHeight }
+        }),
+      )
+      expect(tiers, `${viewport.width} tier count`).toHaveLength(3)
+      for (const card of tiers) {
+        expect(Math.abs(card.w - tiers[0].w), `${viewport.width} tier width`).toBeLessThanOrEqual(1)
+        expect(Math.abs(card.h - tiers[0].h), `${viewport.width} tier height`).toBeLessThanOrEqual(1)
+      }
+      const beforeHover = tiers[0].layoutH
+      await page.locator('#process .process-tier').first().hover()
+      const afterHover = await page.locator('#process .process-tier').evaluateAll((els) =>
+        els.map((el) => (el as HTMLElement).offsetHeight),
+      )
+      expect(afterHover[0], `${viewport.width} hover height`).toBe(beforeHover)
+      for (const height of afterHover) {
+        expect(Math.abs(height - afterHover[0]), `${viewport.width} hover match`).toBeLessThanOrEqual(1)
+      }
       const noteOverflow = await page.locator('.process-note-copy').evaluate((el) => el.scrollWidth - el.clientWidth)
       expect(noteOverflow).toBeLessThanOrEqual(1)
     }
