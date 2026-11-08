@@ -17,10 +17,11 @@ import {
     useRef,
     useState,
     type KeyboardEvent,
+    type MouseEvent as ReactMouseEvent,
     type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
     COVERFLOW_AUTOPLAY_MS_PER_CARD,
@@ -64,6 +65,7 @@ export function CoverFlowCarousel({
     const stageRef = useRef<HTMLDivElement>(null)
     const dragStartX = useRef<number | null>(null)
     const dragStartY = useRef<number | null>(null)
+    const suppressClick = useRef(false)
     const cardEls = useRef(new Map<string, HTMLElement>())
     const progressRef = useRef(
         items.length === 0 ? 0 : wrapCarouselProgress(initialIndex, items.length),
@@ -197,8 +199,23 @@ export function CoverFlowCarousel({
 
     const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
         if (event.pointerType === 'mouse' && event.button !== 0) return
+        if (event.target instanceof Element && event.target.closest('button[aria-expanded]')) {
+            dragStartX.current = null
+            dragStartY.current = null
+            return
+        }
         dragStartX.current = event.clientX
         dragStartY.current = event.clientY
+    }
+
+    const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (dragStartX.current === null || dragStartY.current === null) return
+        const dx = event.clientX - dragStartX.current
+        const dy = event.clientY - dragStartY.current
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.setPointerCapture(event.pointerId)
+        }
     }
 
     const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -210,8 +227,40 @@ export function CoverFlowCarousel({
         const dx = event.clientX - startX
         const dy = event.clientY - startY
         if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return
+        suppressClick.current = true
         if (dx > 0) goPrev()
         else goNext()
+    }
+
+    const indexAtClientPoint = (x: number, y: number) => {
+        let bestIndex: number | null = null
+        let bestDistance = Number.POSITIVE_INFINITY
+        items.forEach((item, index) => {
+            const el = cardEls.current.get(item.id)
+            if (!el || Number(getComputedStyle(el).opacity) < 0.2) return
+            const rect = el.getBoundingClientRect()
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return
+            const dx = x - (rect.left + rect.width / 2)
+            const dy = y - (rect.top + rect.height / 2)
+            const distance = dx * dx + dy * dy
+            if (distance < bestDistance) {
+                bestDistance = distance
+                bestIndex = index
+            }
+        })
+        return bestIndex
+    }
+
+    const onStageClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+        if (suppressClick.current) {
+            suppressClick.current = false
+            return
+        }
+        if (event.target instanceof Element && event.target.closest('button[aria-expanded]')) return
+        const index = indexAtClientPoint(event.clientX, event.clientY)
+        if (index === null) return
+        if (index === nearestCoverflowIndex(progressRef.current, count)) return
+        goTo(index)
     }
 
     if (count === 0) return null
@@ -254,7 +303,9 @@ export function CoverFlowCarousel({
                 tabIndex={0}
                 onKeyDown={onStageKeyDown}
                 onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
+                onClick={onStageClick}
                 className={cn(
                     'relative w-full overflow-visible bg-transparent outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2DA5A0]',
                     COVERFLOW_STAGE_HEIGHT_CLASS,
@@ -303,57 +354,9 @@ export function CoverFlowCarousel({
                 </div>
             </div>
 
-            <div
-                data-testid="features-coverflow-controls"
-                className="mt-1.5 flex items-center justify-center gap-1 sm:gap-2"
-            >
-                <button
-                    type="button"
-                    onClick={goPrev}
-                    aria-label="Previous feature"
-                    className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-colors hover:border-[#2DA5A0]/50 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]"
-                >
-                    <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
-                </button>
-                <div className="flex items-center gap-0" role="tablist" aria-label="Feature slides">
-                    {items.map((item, index) => {
-                        const selected = index === activeIndex
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                role="tab"
-                                aria-selected={selected}
-                                aria-label={`Show ${item.title}`}
-                                onClick={() => goTo(index)}
-                                className={cn(
-                                    'h-11 min-h-[44px] min-w-[44px] px-1 inline-flex items-center justify-center',
-                                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]',
-                                )}
-                            >
-                                <span
-                                    className={cn(
-                                        'block h-1.5 w-1.5 rounded-full transition-colors',
-                                        selected ? 'bg-[#2DA5A0]' : 'bg-white/30',
-                                    )}
-                                />
-                            </button>
-                        )
-                    })}
-                </div>
-                <button
-                    type="button"
-                    onClick={goNext}
-                    aria-label="Next feature"
-                    className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-colors hover:border-[#2DA5A0]/50 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]"
-                >
-                    <ChevronRight className="h-5 w-5" strokeWidth={1.5} />
-                </button>
-            </div>
-
             {active ? (
-                <p className="sr-only" aria-live="polite">
-                    {active.title}
+                <p className="sr-only" aria-live="polite" aria-atomic="true">
+                    {`${active.title}, ${activeIndex + 1} of ${count}`}
                 </p>
             ) : null}
         </div>

@@ -229,8 +229,12 @@ describe('CoverFlowCarousel Features integration', () => {
     });
 
     it('uses Lucide chevrons at stroke 1.5 and no feature icons', () => {
-        expect(CAROUSEL).toContain('ChevronLeft');
-        expect(CAROUSEL).toContain('ChevronRight');
+        expect(CAROUSEL).not.toContain('ChevronLeft');
+        expect(CAROUSEL).not.toContain('ChevronRight');
+        expect(CAROUSEL).not.toContain('features-coverflow-controls');
+        expect(CAROUSEL).not.toContain('Previous feature');
+        expect(CAROUSEL).toContain('aria-live="polite"');
+        expect(CAROUSEL).toContain('aria-label="ViaConnect features"');
         expect(CAROUSEL).toContain('ChevronDown');
         expect(CAROUSEL).toMatch(/strokeWidth=\{1\.5\}/);
         expect(DESKTOP).not.toContain('card.icon');
@@ -296,7 +300,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(COVERFLOW_CARD_SIZE_CLASS).not.toContain('md:h-[268px]');
         expect(CAROUSEL).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');
         expect(CAROUSEL).toContain('COVERFLOW_CARD_SIZE_CLASS');
-        expect(CAROUSEL).toContain('mt-1.5');
+        expect(CAROUSEL).not.toContain('mt-1.5');
+        expect(CAROUSEL).not.toContain('features-coverflow-controls');
         expect(CAROUSEL).not.toContain('mt-4 flex items-center');
         expect(CAROUSEL).not.toContain('h-[420px]');
         expect(CAROUSEL).not.toContain('md:h-[500px]');

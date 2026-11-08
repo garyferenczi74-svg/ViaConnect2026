@@ -8,20 +8,34 @@
  *
  * The nav click scrolls the section to an 80px margin. This padding is
  * only a few pixels, so the eyebrow sits just under the bar. Heading,
- * subtitle, and the plate then share the height that is left. The
- * subtitle-to-card gap stays clamp(32px, 4vw, 64px) from #295: the
- * stage matches the plate, so that margin is the visible gap.
+ * subtitle, and the plate then share the height that is left.
+ *
+ * From 1000px the column is exactly the viewport under that margin.
+ * Free space splits evenly above and below the cards, and the plate
+ * is short enough that the active card footer stays inside the screen.
  */
 export function FeaturesFoldStyle() {
     return (
         <style>{`
           @media (min-width: 1000px) {
             #features {
-              padding-top: clamp(8px, 1.1vh, 16px) !important;
-              --features-card-h: clamp(200px, 40vh, 420px);
-              /* Width tracks the viewport so titles stay on one or two lines.
-                 Height tracks vh so the plate, title bar, and controls fit. */
+              padding-top: 8px !important;
+              padding-bottom: 0 !important;
+              --features-card-h: clamp(160px, calc(100dvh - 5rem - 230px), 420px);
+              /* Width tracks the viewport so titles stay on one or two lines. */
               --features-card-w: clamp(248px, 28vw, 380px);
+            }
+            #features .features-fold {
+              display: flex;
+              flex-direction: column;
+              min-height: calc(100dvh - 5rem - 8px);
+            }
+            #features .features-intro {
+              margin-bottom: 0 !important;
+            }
+            #features [data-testid="features-coverflow"] {
+              margin-top: auto !important;
+              margin-bottom: auto !important;
             }
             #features .features-eyebrow {
               font-size: clamp(12px, 1.6vh, 14px) !important;
@@ -33,9 +47,6 @@ export function FeaturesFoldStyle() {
             }
             #features .features-subtitle {
               font-size: clamp(0.875rem, 2.2vh, 1.125rem) !important;
-            }
-            #features [data-testid="features-coverflow"] {
-              margin-top: 0 !important;
             }
             #features [data-testid="features-coverflow"] [role="region"] {
               height: var(--features-card-h) !important;
