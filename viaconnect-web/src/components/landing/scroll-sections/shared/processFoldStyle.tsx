@@ -173,30 +173,38 @@ export function ProcessFoldStyle() {
               font-size: clamp(13px, 1.5vh, 16px) !important;
             }
             #process .process-tiers {
-              flex: 1 1 auto;
+              flex: 0 0 auto;
               align-items: stretch;
-              max-height: calc(100dvh - var(--landing-nav-h, 78px) - 470px);
+              height: auto;
+              max-height: none;
             }
             #process .process-tier,
-            #process .pillar-card {
-              height: 100%;
+            #process .pillar-card,
+            #process .pillar-inner {
+              height: auto;
             }
             #process .pillar-inner {
-              height: 100%;
-              min-height: clamp(200px, 24vh, 340px) !important;
+              min-height: 0 !important;
+              padding: clamp(22px, 1.8vw, 32px) clamp(20px, 1.5vw, 28px) !important;
             }
             #process .pillar-eyebrow {
-              font-size: 0.8rem !important;
+              font-size: clamp(0.8rem, 0.9vw, 0.95rem) !important;
+            }
+            #process .pillar-detail {
+              font-size: clamp(0.85rem, 0.95vw, 1rem) !important;
+              line-height: 1.35 !important;
             }
             #process .pillar-title {
-              font-size: clamp(1.2rem, 2.4vh, 1.75rem) !important;
+              font-size: clamp(1.35rem, 1.5vw, 1.75rem) !important;
+              line-height: 1.2 !important;
             }
             #process .pillar-body {
-              font-size: clamp(0.95rem, 1.7vh, 1.125rem) !important;
-              line-height: 1.4 !important;
+              font-size: clamp(1.05rem, 1.15vw, 1.3rem) !important;
+              line-height: 1.55 !important;
             }
             #process .pillar-numeral {
-              font-size: clamp(3.75rem, 8vh, 6.25rem) !important;
+              font-size: clamp(2.75rem, 3.2vw, 4.25rem) !important;
+              line-height: 1 !important;
             }
           }
           @media (max-width: 999px) {
