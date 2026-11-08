@@ -150,6 +150,45 @@ export function ProcessFoldStyle() {
               white-space: nowrap;
             }
           }
+          /* Desktop type and tier cards grow past the laptop caps.
+             Scoped to #process so the hero pillar cards stay as they are. */
+          @media (min-width: 1200px) {
+            #process .process-heading {
+              font-size: clamp(2.35rem, 4.4vh, 3.5rem) !important;
+            }
+            #process .process-subtitle {
+              font-size: clamp(1.05rem, 1.9vh, 1.35rem) !important;
+            }
+            #process .process-note p {
+              font-size: clamp(13px, 0.95vw, 16px) !important;
+            }
+            #process .process-label {
+              font-size: clamp(12px, 1.3vh, 15px) !important;
+            }
+            #process .pillar-inner {
+              min-height: clamp(168px, 22vh, 240px) !important;
+            }
+            #process .pillar-eyebrow {
+              font-size: 0.75rem !important;
+            }
+            #process .pillar-title {
+              font-size: clamp(1.05rem, 2vh, 1.45rem) !important;
+            }
+            #process .pillar-body {
+              font-size: clamp(0.875rem, 1.5vh, 1rem) !important;
+              line-height: 1.4 !important;
+            }
+            #process .pillar-numeral {
+              font-size: clamp(3.25rem, 7vh, 5rem) !important;
+            }
+          }
+          @media (min-width: 1200px) and (min-height: 900px) {
+            #process .process-gap {
+              flex: 1 1 var(--process-gap);
+              height: auto;
+              min-height: var(--process-gap);
+            }
+          }
           @media (max-width: 999px) {
             #process {
               --process-circle-label-gap: clamp(10px, 1.4vh, 16px);

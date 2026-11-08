@@ -89,6 +89,70 @@ export function GenomicsFoldStyle() {
               box-shadow: 0 0 14px rgba(45, 165, 160, 0.4) !important;
             }
           }
+          /* Desktop restores a fuller scale. The 1000px block above stays
+             the short-laptop fit, so 1007px is unchanged. */
+          @media (min-width: 1200px) {
+            #genomics {
+              padding-top: clamp(28px, 4vh, 72px) !important;
+              padding-bottom: clamp(36px, 5vh, 80px) !important;
+            }
+            #genomics .genomics-intro {
+              margin-bottom: clamp(18px, 2.6vh, 36px) !important;
+            }
+            #genomics .genomics-eyebrow {
+              font-size: clamp(12px, 1.4vh, 14px) !important;
+              margin-bottom: clamp(6px, 0.8vh, 12px) !important;
+            }
+            #genomics .genomics-heading {
+              font-size: clamp(2.6rem, 5vh, 4.25rem) !important;
+              margin-bottom: clamp(8px, 1vh, 16px) !important;
+            }
+            #genomics .genomics-subline {
+              font-size: clamp(1.15rem, 2.1vh, 1.75rem) !important;
+              margin-bottom: clamp(8px, 1vh, 14px) !important;
+            }
+            #genomics .genomics-body {
+              font-size: clamp(1rem, 1.7vh, 1.2rem) !important;
+              line-height: 1.45 !important;
+              max-width: 48rem;
+            }
+            #genomics .genomics-panels {
+              gap: clamp(16px, 1.4vw, 24px) !important;
+              margin-bottom: clamp(32px, 4vh, 48px) !important;
+              max-width: 1120px;
+              margin-left: auto !important;
+              margin-right: auto !important;
+            }
+            #genomics .genomics-panel {
+              height: clamp(200px, 24vh, 300px);
+              padding: clamp(18px, 2.2vh, 28px) !important;
+            }
+            #genomics .genomics-panel-icon {
+              width: clamp(22px, 2.8vh, 32px) !important;
+              height: clamp(22px, 2.8vh, 32px) !important;
+              margin-bottom: clamp(10px, 1.4vh, 18px) !important;
+            }
+            #genomics .genomics-panel-name {
+              font-size: clamp(1.25rem, 2.4vh, 1.75rem) !important;
+              margin-bottom: clamp(6px, 0.8vh, 12px) !important;
+            }
+            #genomics .genomics-panel-body {
+              font-size: clamp(13px, 1.5vh, 15px) !important;
+              line-height: 1.45 !important;
+            }
+            #genomics .genomics-actions {
+              gap: 12px !important;
+            }
+            #genomics .genomics-cta {
+              padding: 10px 18px !important;
+              font-size: 16px !important;
+            }
+            #genomics .genomics-cta svg {
+              width: 16px !important;
+              height: 16px !important;
+              margin-left: 8px !important;
+            }
+          }
         `}</style>
     )
 }
