@@ -83,9 +83,20 @@ test.describe('landing desktop scale', () => {
       await align(page, 'process')
       const tier = await page.locator('.process-tier').first().evaluate((el) => {
         const box = el.getBoundingClientRect()
-        return { height: box.height, bottom: box.bottom }
+        const body = el.querySelector('.pillar-body')
+        const title = el.querySelector('.pillar-title')
+        return {
+          height: box.height,
+          bottom: box.bottom,
+          body: body ? parseFloat(getComputedStyle(body).fontSize) : 0,
+          title: title ? parseFloat(getComputedStyle(title).fontSize) : 0,
+          clipped: body ? body.scrollHeight - body.clientHeight : 0,
+        }
       })
-      expect(tier.height, `${viewport.width} tier`).toBeGreaterThanOrEqual(200)
+      expect(tier.body, `${viewport.width} tier body`).toBeGreaterThanOrEqual(16.8)
+      expect(tier.title, `${viewport.width} tier title`).toBeGreaterThanOrEqual(21)
+      expect(tier.height, `${viewport.width} tier`).toBeLessThanOrEqual(360)
+      expect(tier.clipped, `${viewport.width} tier clip`).toBeLessThanOrEqual(1)
       expect(tier.bottom, `${viewport.width} tier bottom`).toBeLessThanOrEqual(viewport.height - 8)
       const noteOverflow = await page.locator('.process-note-copy').evaluate((el) => el.scrollWidth - el.clientWidth)
       expect(noteOverflow).toBeLessThanOrEqual(1)
