@@ -303,7 +303,10 @@ export function CoverFlowCarousel({
                 </div>
             </div>
 
-            <div className="mt-1.5 flex items-center justify-center gap-1 sm:gap-2">
+            <div
+                data-testid="features-coverflow-controls"
+                className="mt-1.5 flex items-center justify-center gap-1 sm:gap-2"
+            >
                 <button
                     type="button"
                     onClick={goPrev}
@@ -473,10 +476,10 @@ function CoverFlowCard({
                     </AnimatePresence>
                 </div>
 
-                <div className="relative border-t border-white/10 bg-[#111827]/70 px-3 py-2">
+                <div className="features-card-title-bar relative min-h-11 border-t border-white/10 bg-[#111827]/70 px-3 py-2">
                     <h3
                         id={headingId}
-                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base md:text-lg lg:text-xl"
+                        className="features-card-title pr-10 text-sm font-medium leading-snug text-white sm:text-base md:text-lg lg:text-xl"
                     >
                         {item.title}
                     </h3>
