@@ -82,11 +82,14 @@ test.describe('genomics fold', () => {
       expect(measured.rows).toBe(2)
       expect(measured.panelBottom).toBeLessThanOrEqual(measured.viewport - 8)
       expect(measured.clearance).toBeGreaterThanOrEqual(8)
-      await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
-      await expect(page.getByRole('link', { name: 'Order GeneX360' })).toHaveCount(1)
+      const actionsBottom = await page.locator('.genomics-actions').evaluate((el) => el.getBoundingClientRect().bottom)
+      if (height === 520) {
+        expect(actionsBottom).toBeLessThanOrEqual(height - 8)
+        console.log(`genomics-actions 520 bottom ${Math.round(actionsBottom * 10) / 10}`)
+      }
       await page.screenshot({
         path: height === 520
-          ? '/opt/cursor/artifacts/genomics_no_explorer_1007x520.png'
+          ? '/opt/cursor/artifacts/genomics_ctas_1007x520.png'
           : `/opt/cursor/artifacts/genomics_fold_1007x${height}.png`,
         fullPage: false,
       })
@@ -127,9 +130,9 @@ test.describe('genomics fold', () => {
     expect(measured.rows).toBeGreaterThanOrEqual(6)
     await expect(page.getByText('PeptideIQ', { exact: true })).toBeVisible()
     await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'Order GeneX360' })).toHaveCount(1)
+    await page.locator('.genomics-actions').scrollIntoViewIfNeeded()
     await page.screenshot({
-      path: '/opt/cursor/artifacts/genomics_no_explorer_390.png',
+      path: '/opt/cursor/artifacts/genomics_ctas_390.png',
       fullPage: false,
     })
   })

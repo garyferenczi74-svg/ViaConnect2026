@@ -11,7 +11,7 @@ export function GenomicsFoldStyle() {
               scroll-margin-top: var(--landing-nav-h, 78px);
               min-height: 0 !important;
               padding-top: 8px !important;
-              padding-bottom: 24px !important;
+              padding-bottom: 12px !important;
             }
             #genomics .genomics-intro {
               margin-bottom: clamp(8px, 1.2vh, 14px) !important;
@@ -36,10 +36,10 @@ export function GenomicsFoldStyle() {
             #genomics .genomics-panels {
               grid-template-columns: repeat(3, minmax(0, 1fr));
               gap: clamp(8px, 1vh, 12px) !important;
-              margin-bottom: clamp(12px, 1.6vh, 20px) !important;
+              margin-bottom: clamp(8px, 1vh, 12px) !important;
             }
             #genomics .genomics-panel {
-              height: clamp(136px, calc((100dvh - var(--landing-nav-h, 78px) - 168px) / 2), 210px);
+              height: clamp(112px, calc((100dvh - var(--landing-nav-h, 78px) - 210px) / 2), 190px);
               padding: clamp(10px, 1.4vh, 16px) !important;
               overflow: hidden;
             }
@@ -56,6 +56,31 @@ export function GenomicsFoldStyle() {
             #genomics .genomics-panel-body {
               font-size: clamp(10px, 1.2vh, 12px) !important;
               line-height: 1.28 !important;
+            }
+            #genomics .genomics-actions {
+              gap: 10px !important;
+            }
+            #genomics .genomics-cta {
+              padding: 6px 14px !important;
+              font-size: 13px !important;
+              line-height: 1.2 !important;
+            }
+            #genomics .genomics-cta svg {
+              width: 14px !important;
+              height: 14px !important;
+              margin-left: 6px !important;
+            }
+            #genomics .genomics-cta-order {
+              box-shadow: 0 0 10px rgba(183, 94, 24, 0.28) !important;
+            }
+            #genomics .genomics-cta-order:hover {
+              box-shadow: 0 0 14px rgba(183, 94, 24, 0.4) !important;
+            }
+            #genomics .genomics-cta-upload {
+              box-shadow: 0 0 10px rgba(45, 165, 160, 0.28) !important;
+            }
+            #genomics .genomics-cta-upload:hover {
+              box-shadow: 0 0 14px rgba(45, 165, 160, 0.4) !important;
             }
           }
         `}</style>
