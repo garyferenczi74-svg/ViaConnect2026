@@ -343,10 +343,8 @@ function SnapPillarCard({
       data-testid={`hero-pillar-slide-${realIndex}`}
     >
       <div
-        className="relative flex h-full flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
+        className="pillar-inner relative flex h-full flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
         style={{
-          minHeight: 187,
-          padding: '20px 19px',
           background: `${override.surfaceOverlay}, rgba(30, 48, 84, 0.45)`,
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
@@ -354,10 +352,9 @@ function SnapPillarCard({
       >
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute right-[-2px] top-[-8px] z-[1] select-none font-bold leading-none"
+          className="pillar-numeral pointer-events-none absolute z-[1] select-none font-bold leading-none"
           style={
             {
-              fontSize: 82,
               letterSpacing: '-0.06em',
               color: 'transparent',
               WebkitTextStroke: `1px ${override.numeralStroke}`,
@@ -387,20 +384,17 @@ function SnapPillarCard({
             {pillar.eyebrow}
           </span>
           <h3
-            className="font-semibold text-white"
+            className="pillar-title font-semibold text-white"
             style={{
-              fontSize: 26,
-              marginBottom: 10,
-              lineHeight: 1.05,
+              lineHeight: 1.12,
               letterSpacing: '-0.02em',
             }}
           >
             {pillar.headline}
           </h3>
           <p
+            className="pillar-body"
             style={{
-              fontSize: 13,
-              lineHeight: 1.5,
               color: 'rgba(255,255,255,0.72)',
             }}
           >
