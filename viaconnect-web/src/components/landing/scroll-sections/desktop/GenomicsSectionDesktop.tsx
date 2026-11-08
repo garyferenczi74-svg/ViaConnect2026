@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { Dna, Apple, Activity, Layers, FlaskConical, Leaf, ArrowRight } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
-import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
 import { GenomicsFoldStyle } from '../shared/genomicsFoldStyle'
 import { GenomicsPanelCard } from '../shared/GenomicsPanelCard'
 
@@ -82,7 +81,7 @@ export function GenomicsSectionDesktop() {
 
                 <div
                     data-testid="genomics-panels"
-                    className="genomics-panels grid grid-cols-1 sm:grid-cols-2 min-[1000px]:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-24"
+                    className="genomics-panels grid grid-cols-1 sm:grid-cols-2 min-[1000px]:grid-cols-3 gap-4 md:gap-6 mb-8"
                 >
                     {PANELS.map((panel, i) => (
                         <motion.div
@@ -103,17 +102,7 @@ export function GenomicsSectionDesktop() {
                     ))}
                 </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-16"
-                >
-                    <VariantsExplorerPreview density="comfortable" />
-                </motion.div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
                     <Link
                         href="/shop?category=methylation"
                         className="inline-flex items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-8 py-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]"

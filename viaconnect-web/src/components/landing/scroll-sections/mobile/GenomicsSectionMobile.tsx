@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { Dna, Apple, Activity, Layers, FlaskConical, Leaf, ArrowRight } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
-import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
 import { GenomicsPanelCard } from '../shared/GenomicsPanelCard'
 
 const PANELS = [
@@ -45,7 +44,7 @@ export function GenomicsSectionMobile() {
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 gap-4 mb-12">
+                <div className="grid grid-cols-1 gap-4 mb-8">
                     {PANELS.map((panel, i) => (
                         <motion.div
                             key={panel.name}
@@ -63,10 +62,6 @@ export function GenomicsSectionMobile() {
                             />
                         </motion.div>
                     ))}
-                </div>
-
-                <div className="mb-10">
-                    <VariantsExplorerPreview density="compact" />
                 </div>
 
                 <div className="flex flex-col gap-4">
