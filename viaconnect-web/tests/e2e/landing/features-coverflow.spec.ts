@@ -22,6 +22,47 @@ async function openFeatures(page: Page) {
   await page.getByTestId('features-coverflow').hover()
 }
 
+async function settleFeatures(page: Page) {
+  await page.evaluate(() => {
+    const section = document.getElementById('features')
+    if (!section) return
+    const margin = Number.parseFloat(getComputedStyle(section).scrollMarginTop) || 80
+    const top = section.getBoundingClientRect().top + window.scrollY - margin
+    window.scrollTo({ top, behavior: 'auto' })
+  })
+  await expect.poll(async () => {
+    return page.locator('.features-intro').evaluate((el) => {
+      const style = getComputedStyle(el)
+      if (Number(style.opacity) < 0.99) return false
+      if (style.transform === 'none') return true
+      const match = style.transform.match(/matrix\(([^)]+)\)/)
+      const translateY = match ? Number(match[1].split(',')[5]) : 0
+      return Math.abs(translateY) < 1
+    })
+  }, { timeout: 4000 }).toBe(true)
+}
+
+async function foldMeasure(page: Page) {
+  return page.evaluate(() => {
+    const nav = document.querySelector('header nav')?.getBoundingClientRect()
+    const heading = document.querySelector('[data-testid="features-heading"]')?.getBoundingClientRect()
+    const subtitle = [...document.querySelectorAll('#features .features-subtitle')].find((el) => getComputedStyle(el).display !== 'none')?.getBoundingClientRect()
+    const stage = document.querySelector('#features [aria-roledescription="carousel"]')?.getBoundingClientRect()
+    const card = document.querySelector('#features [data-active="true"]')?.getBoundingClientRect()
+    const round = (n: number) => Math.round(n * 10) / 10
+    if (!nav || !heading || !subtitle || !stage || !card) return null
+    return {
+      navBottom: round(nav.bottom),
+      headingY: round(heading.y),
+      gapAbove: round(card.top - subtitle.bottom),
+      gapBelow: round(window.innerHeight - card.bottom),
+      cardBottom: round(card.bottom),
+      cardH: round(card.height),
+      viewport: window.innerHeight,
+    }
+  })
+}
+
 async function activeCardId(page: Page): Promise<string> {
   const testId = await page.locator('[data-testid^="features-coverflow-card-"][data-active="true"]').getAttribute('data-testid')
   return testId ?? ''
@@ -56,10 +97,32 @@ test.describe('features coverflow navigation', () => {
     await expect(live).toHaveClass(/sr-only/)
     await expect(live).toContainText('of')
 
+    await settleFeatures(page)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/features_coverflow_1007x520.png',
+      path: '/opt/cursor/artifacts/features_fold_fit_1007x520.png',
       fullPage: false,
     })
+  })
+
+  test('the carousel footer fits under the nav at 1007x520 and 1007x560', async ({ page }) => {
+    for (const height of [520, 560]) {
+      await page.setViewportSize({ width: 1007, height })
+      await openFeatures(page)
+      await settleFeatures(page)
+      const measured = await foldMeasure(page)
+      expect(measured, `${height}`).not.toBeNull()
+      if (!measured) continue
+      console.log(`features-fold ${height}`, JSON.stringify(measured))
+      expect(measured.headingY).toBeGreaterThan(measured.navBottom - 1)
+      expect(measured.cardBottom).toBeLessThanOrEqual(measured.viewport - 8)
+      expect(measured.gapAbove).toBeGreaterThanOrEqual(12)
+      expect(measured.gapBelow).toBeGreaterThanOrEqual(12)
+      expect(Math.abs(measured.gapAbove - measured.gapBelow)).toBeLessThanOrEqual(12)
+      await page.screenshot({
+        path: `/opt/cursor/artifacts/features_fold_fit_1007x${height}.png`,
+        fullPage: false,
+      })
+    }
   })
 
   test('a swipe advances the carousel and 390 has no control row', async ({ page }) => {
@@ -82,8 +145,9 @@ test.describe('features coverflow navigation', () => {
     await page.mouse.up()
     await expect.poll(async () => activeCardId(page)).not.toBe(before)
 
+    await settleFeatures(page)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/features_coverflow_390.png',
+      path: '/opt/cursor/artifacts/features_fold_fit_390.png',
       fullPage: false,
     })
   })

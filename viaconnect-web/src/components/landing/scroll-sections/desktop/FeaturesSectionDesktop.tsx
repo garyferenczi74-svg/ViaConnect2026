@@ -15,7 +15,7 @@ export function FeaturesSectionDesktop() {
             className="px-5 pt-20 pb-6 md:px-12 md:pt-32 md:pb-8 min-[1000px]:!bg-[#0d1225]"
         >
             <FeaturesFoldStyle />
-            <div className="max-w-7xl mx-auto">
+            <div className="features-fold max-w-7xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
