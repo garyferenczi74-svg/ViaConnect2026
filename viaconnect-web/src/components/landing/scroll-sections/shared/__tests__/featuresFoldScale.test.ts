@@ -23,6 +23,9 @@ describe('features fold vh scale', () => {
         expect(FOLD).toContain('clamp(248px, 28vw, 380px)')
         expect(FOLD).toContain('clamp(13px, 2.4vh, 20px)')
         expect(FOLD).toContain('padding-top: clamp(8px, 1.1vh, 16px)')
+        expect(FOLD).toContain('calc(clamp(32px, 4vw, 64px) + 25px)')
+        expect(FOLD).toContain('calc(1.5rem + 25px)')
+        expect(FOLD).toContain('calc(2rem + 25px)')
         expect(FOLD).not.toContain('any')
     })
 

@@ -11,10 +11,24 @@
  * subtitle, and the plate then share the height that is left. The
  * subtitle-to-card gap stays clamp(32px, 4vw, 64px) from #295: the
  * stage matches the plate, so that margin is the visible gap.
+ *
+ * The arrow row was 6px plus a 44px control. That 50px is split evenly
+ * onto the gap above the cards and the section padding below them.
  */
 export function FeaturesFoldStyle() {
     return (
         <style>{`
+          #features .features-intro {
+            margin-bottom: calc(clamp(32px, 4vw, 64px) + 25px) !important;
+          }
+          #features {
+            padding-bottom: calc(1.5rem + 25px) !important;
+          }
+          @media (min-width: 768px) {
+            #features {
+              padding-bottom: calc(2rem + 25px) !important;
+            }
+          }
           @media (min-width: 1000px) {
             #features {
               padding-top: clamp(8px, 1.1vh, 16px) !important;

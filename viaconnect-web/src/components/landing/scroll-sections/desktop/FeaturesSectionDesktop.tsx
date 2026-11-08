@@ -21,7 +21,7 @@ export function FeaturesSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative z-10 mb-[clamp(32px,4vw,64px)]"
+                    className="features-intro relative z-10 mb-[clamp(32px,4vw,64px)]"
                 >
                     <p className="features-eyebrow text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         What You Get
