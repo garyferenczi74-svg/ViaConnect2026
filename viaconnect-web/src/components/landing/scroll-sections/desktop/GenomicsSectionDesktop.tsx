@@ -5,6 +5,7 @@ import { Dna, Apple, Activity, Layers, FlaskConical, Leaf, ArrowRight } from 'lu
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
+import { GenomicsFoldStyle } from '../shared/genomicsFoldStyle'
 
 const PANELS = [
     {
@@ -52,29 +53,36 @@ export function GenomicsSectionDesktop() {
             ariaLabel="ViaConnect Genomics"
             className="min-h-screen py-20 px-5 md:py-32 md:px-12"
         >
-            <div className="max-w-7xl mx-auto">
+            <GenomicsFoldStyle />
+            <div className="genomics-stack max-w-7xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-12 md:mb-20"
+                    className="genomics-intro mb-12 md:mb-20"
                 >
-                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
+                    <p className="genomics-eyebrow text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         The Science
                     </p>
-                    <h2 className="text-white text-4xl md:text-7xl font-light leading-tight mb-2 md:mb-3">
+                    <h2
+                        data-testid="genomics-heading"
+                        className="genomics-heading text-white text-4xl md:text-7xl font-light leading-tight mb-2 md:mb-3"
+                    >
                         {TAGLINES.master}
                     </h2>
-                    <p className="text-[#2DA5A0] text-lg md:text-2xl font-light tracking-wide mb-4 md:mb-6">
+                    <p className="genomics-subline text-[#2DA5A0] text-lg md:text-2xl font-light tracking-wide mb-4 md:mb-6">
                         {TAGLINES.snpSubLine}
                     </p>
-                    <p className="text-white/70 text-base md:text-xl max-w-3xl leading-relaxed">
+                    <p className="genomics-body text-white/70 text-base md:text-xl max-w-3xl leading-relaxed">
                         GeneX360 reads variants across six clinical panels Your genetics drive your protocol Not generic averages Not population means You
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-24">
+                <div
+                    data-testid="genomics-panels"
+                    className="genomics-panels grid grid-cols-1 sm:grid-cols-2 min-[1000px]:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-24"
+                >
                     {PANELS.map((panel, i) => {
                         const Icon = panel.icon
                         return (
@@ -84,12 +92,12 @@ export function GenomicsSectionDesktop() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.3 }}
                                 transition={{ duration: 0.5, delay: i * 0.06 }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300"
+                                className="genomics-panel bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300"
                                 style={{ borderTopColor: panel.accent, borderTopWidth: '2px' }}
                             >
-                                <Icon strokeWidth={1.5} className="w-8 h-8 mb-6" style={{ color: panel.accent }} />
-                                <h3 className="text-white text-2xl font-medium mb-3">{panel.name}</h3>
-                                <p className="text-white/60 text-sm leading-relaxed">{panel.description}</p>
+                                <Icon strokeWidth={1.5} className="genomics-panel-icon w-8 h-8 mb-6" style={{ color: panel.accent }} />
+                                <h3 className="genomics-panel-name text-white text-2xl font-medium mb-3">{panel.name}</h3>
+                                <p className="genomics-panel-body text-white/60 text-sm leading-relaxed">{panel.description}</p>
                             </motion.div>
                         )
                     })}
