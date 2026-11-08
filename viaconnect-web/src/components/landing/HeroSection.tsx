@@ -196,13 +196,17 @@ export function HeroSection({
                       padding: clamp(14px, 1.8vh, 24px) clamp(16px, 1.3vw, 28px) !important;
                     }
                     .hero-screen .pillar-eyebrow {
-                      font-size: clamp(0.72rem, 1.35vh, 0.85rem) !important;
+                      font-size: clamp(0.8rem, 1.5vh, 1rem) !important;
+                      margin-bottom: clamp(8px, 1.2vh, 14px) !important;
                     }
                     .hero-screen .pillar-title {
-                      font-size: clamp(16px, 2.2vh, 22px) !important;
+                      font-size: clamp(20px, 2.6vh, 28px) !important;
+                      line-height: 1.2 !important;
+                      margin-bottom: clamp(10px, 1.2vh, 16px) !important;
                     }
                     .hero-screen .pillar-body {
-                      font-size: clamp(13.33px, 1.833vh, 18.33px) !important;
+                      font-size: clamp(16.67px, 2.167vh, 23.33px) !important;
+                      line-height: 1.45 !important;
                     }
                     .hero-screen .pillar-numeral {
                       font-size: clamp(2.75rem, min(4.6vw, 7vh), 5.25rem) !important;
