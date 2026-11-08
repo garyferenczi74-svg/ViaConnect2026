@@ -165,6 +165,64 @@ export function HeroSection({
                       font-size: clamp(1.25rem, min(4.2vw, 5.4vh), 4.25rem) !important;
                     }
                   }
+                  /* Desktop only. 1007px laptops, tablets, and phones stay
+                     on the rules above. Scoped to the hero so Process cards
+                     are not affected. */
+                  @media (min-width: 1200px) {
+                    .hero-screen .hero-headline {
+                      font-size: clamp(2.15rem, min(6vw, 9vh), 5rem) !important;
+                    }
+                    .hero-screen .hero-subtitle {
+                      font-size: clamp(0.95rem, 2vh, 1.2rem) !important;
+                    }
+                    .hero-screen .hero-tagline {
+                      font-size: clamp(1rem, 2.15vh, 1.4rem) !important;
+                    }
+                    .hero-screen .hero-flex-spacer {
+                      flex: 0.35 1 0px;
+                      max-height: clamp(28px, 9vh, 120px);
+                    }
+                    .hero-screen [data-testid="hero-pillars-desktop-grid"] {
+                      flex: 1 1 auto;
+                      min-height: 0;
+                      align-items: stretch;
+                    }
+                    .hero-screen .pillar-card,
+                    .hero-screen .pillar-inner {
+                      height: 100%;
+                    }
+                    .hero-screen .pillar-inner {
+                      min-height: clamp(128px, 20vh, 240px) !important;
+                      padding: clamp(14px, 1.8vh, 24px) clamp(16px, 1.3vw, 28px) !important;
+                    }
+                    .hero-screen .pillar-eyebrow {
+                      font-size: clamp(0.72rem, 1.35vh, 0.85rem) !important;
+                    }
+                    .hero-screen .pillar-title {
+                      font-size: clamp(16px, 2.2vh, 22px) !important;
+                    }
+                    .hero-screen .pillar-body {
+                      font-size: clamp(13.33px, 1.833vh, 18.33px) !important;
+                    }
+                    .hero-screen .pillar-numeral {
+                      font-size: clamp(2.75rem, min(4.6vw, 7vh), 5.25rem) !important;
+                    }
+                    .hero-screen .hero-equal-spacer {
+                      flex-basis: clamp(28px, 4.6vh, 64px);
+                      height: clamp(28px, 4.6vh, 64px);
+                      min-height: clamp(28px, 4.6vh, 64px);
+                    }
+                    .hero-screen [data-testid="hero-ctas"] a {
+                      height: clamp(2.25rem, calc(2.6vh + 16px), 3.25rem) !important;
+                      padding-left: clamp(18px, 1.5vw, 28px) !important;
+                      padding-right: clamp(18px, 1.5vw, 28px) !important;
+                      font-size: clamp(15px, 1.7vh, 18px) !important;
+                    }
+                    .hero-screen [data-testid="hero-ctas"] svg {
+                      width: 20px !important;
+                      height: 20px !important;
+                    }
+                  }
                 `}</style>
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
