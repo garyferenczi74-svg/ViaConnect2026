@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Activity, ChevronLeft, ChevronRight, Dna, FlaskConical, Heart, Pill, Sun, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { FluidHoverHighlight } from '@/components/ui/fluid-hover-highlight'
 import {
     useFluidHover,
     useRegisterFluidHoverItem,
@@ -26,13 +25,12 @@ export interface ProcessAssessmentPhase {
     icon: LucideIcon
     label: string
     optional?: boolean
-    sub?: readonly string[]
 }
 
 export const PROCESS_ASSESSMENT_PHASES: readonly ProcessAssessmentPhase[] = [
     { icon: User, label: 'Demographics' },
     { icon: Heart, label: 'Health History' },
-    { icon: Activity, label: 'Symptoms', sub: ['Physical', 'Neuro', 'Emotional'] },
+    { icon: Activity, label: 'Symptoms' },
     { icon: Pill, label: 'Medications and Supplements' },
     { icon: Sun, label: 'Lifestyle' },
     { icon: Dna, label: 'Genetics Upload', optional: true },
@@ -55,10 +53,7 @@ function nearestSlideIndex(container: HTMLElement): number | null {
 }
 
 function stepAriaLabel(phase: ProcessAssessmentPhase): string {
-    const parts = [phase.label]
-    if (phase.optional) parts.push('optional')
-    if (phase.sub && phase.sub.length > 0) parts.push(phase.sub.join(', '))
-    return parts.join(', ')
+    return phase.optional ? `${phase.label}, optional` : phase.label
 }
 
 export function ProcessAssessmentSteps() {
@@ -248,10 +243,6 @@ export function ProcessAssessmentSteps() {
                 className="pointer-events-none absolute z-0 hidden h-px bg-gradient-to-r from-transparent via-[#2DA5A0]/40 to-transparent min-[1000px]:block"
                 style={{ top: 'var(--process-line-y, 1.7rem)', left: '4%', right: '4%' }}
             />
-            <FluidHoverHighlight
-                className="z-[1] rounded-2xl bg-[#2DA5A0]/10 shadow-[0_0_22px_rgba(45,165,160,0.22)] ring-1 ring-[#2DA5A0]/40"
-                hover={hover}
-            />
             {PROCESS_ASSESSMENT_PHASES.map((phase, index) => (
                 <ProcessAssessmentStep
                     key={phase.label}
@@ -356,43 +347,27 @@ function ProcessAssessmentStep({
                 data-testid={`process-step-${index}`}
                 data-active={active ? 'true' : 'false'}
                 aria-label={stepAriaLabel(phase)}
-                className="process-step-button flex h-full w-full cursor-pointer flex-row items-center gap-3 rounded-2xl border border-white/10 px-3 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0] min-[1000px]:flex-col min-[1000px]:items-center min-[1000px]:gap-0 min-[1000px]:border-0 min-[1000px]:px-1 min-[1000px]:py-2 min-[1000px]:text-center"
+                className="process-step-button group flex h-full w-full cursor-pointer flex-row items-center gap-3 rounded-2xl border border-white/10 px-3 py-3 text-left focus-visible:outline-none min-[1000px]:flex-col min-[1000px]:items-center min-[1000px]:gap-0 min-[1000px]:border-0 min-[1000px]:px-1 min-[1000px]:py-2 min-[1000px]:text-center"
             >
                 <div
+                    data-icon-active={active ? 'true' : 'false'}
                     className={cn(
-                        'process-icon mb-0 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-[#0d1225] transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none min-[1000px]:mb-2',
+                        'process-icon mb-0 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-[#0d1225] transition-[border-color,box-shadow,background-color,transform] duration-300 ease-out motion-reduce:transition-none min-[1000px]:mb-2 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[#2DA5A0]',
                         active
-                            ? 'border-[#2DA5A0] shadow-[0_0_16px_rgba(45,165,160,0.55)]'
-                            : 'border-[#2DA5A0]/40',
+                            ? 'scale-[1.08] border-[#2DA5A0] bg-[#2DA5A0]/15 shadow-[0_0_18px_rgba(45,165,160,0.55)]'
+                            : 'scale-100 border-[#2DA5A0]/40',
                     )}
                 >
                     <Icon strokeWidth={1.5} className="process-icon-glyph h-5 w-5 text-[#2DA5A0]" aria-hidden="true" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col items-start min-[1000px]:w-full min-[1000px]:flex-none min-[1000px]:items-center">
-                    <p
-                        className={cn(
-                            'process-label max-w-full text-sm font-medium leading-snug text-white transition-[filter] duration-200 motion-reduce:transition-none min-[1000px]:text-xs',
-                            active && 'drop-shadow-[0_0_8px_rgba(45,165,160,0.9)]',
-                        )}
-                    >
+                    <p className="process-label max-w-full text-sm font-medium leading-snug text-white min-[1000px]:text-xs">
                         {phase.label}
                     </p>
                     {phase.optional ? (
                         <span className="process-optional mt-1 text-xs uppercase tracking-wider text-[#B75E18] min-[1000px]:mt-2">
                             Optional
                         </span>
-                    ) : null}
-                    {phase.sub ? (
-                        <div className="process-chips mt-1.5 flex flex-wrap justify-start gap-1.5 min-[1000px]:mt-3 min-[1000px]:justify-center">
-                            {phase.sub.map((chip) => (
-                                <span
-                                    key={chip}
-                                    className="process-chip rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/70"
-                                >
-                                    {chip}
-                                </span>
-                            ))}
-                        </div>
                     ) : null}
                 </div>
             </button>

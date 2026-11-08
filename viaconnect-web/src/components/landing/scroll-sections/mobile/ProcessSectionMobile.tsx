@@ -7,7 +7,7 @@ import { SECTION_IDS } from '../shared/sectionConstants'
 const PHASES = [
     { icon: User, label: 'Demographics' },
     { icon: Heart, label: 'Health History' },
-    { icon: Activity, label: 'Symptoms', sub: ['Physical', 'Neuro', 'Emotional'] },
+    { icon: Activity, label: 'Symptoms' },
     { icon: Pill, label: 'Medications and Supplements' },
     { icon: Sun, label: 'Lifestyle' },
     { icon: Dna, label: 'Genetics Upload', optional: true },
@@ -81,15 +81,6 @@ export function ProcessSectionMobile() {
                                     <p className="text-white text-sm font-medium">{phase.label}</p>
                                     {phase.optional && (
                                         <span className="text-[10px] text-[#B75E18] uppercase tracking-wider">Optional</span>
-                                    )}
-                                    {phase.sub && (
-                                        <div className="mt-1.5 flex flex-wrap gap-1">
-                                            {phase.sub.map((s) => (
-                                                <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60 uppercase tracking-wider">
-                                                    {s}
-                                                </span>
-                                            ))}
-                                        </div>
                                     )}
                                 </div>
                             </motion.div>

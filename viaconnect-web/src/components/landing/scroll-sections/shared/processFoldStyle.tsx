@@ -71,15 +71,6 @@ export function ProcessFoldStyle() {
               font-size: clamp(11px, 1.45vh, 14px) !important;
               line-height: 1.25 !important;
             }
-            #process .process-chips {
-              margin-top: clamp(3px, 0.5vh, 8px) !important;
-              gap: 3px !important;
-            }
-            #process .process-chip {
-              font-size: clamp(8px, 1.05vh, 10px) !important;
-              padding: 1px 5px !important;
-              letter-spacing: 0.04em !important;
-            }
             #process .process-optional {
               margin-top: clamp(2px, 0.4vh, 6px) !important;
               font-size: clamp(8px, 1.05vh, 11px) !important;
@@ -121,6 +112,19 @@ export function ProcessFoldStyle() {
             #process .process-step-row > li {
               scroll-snap-align: start;
             }
+          }
+          #process .process-icon {
+            transition: border-color 300ms ease, box-shadow 300ms ease, background-color 300ms ease, transform 300ms ease;
+          }
+          #process .process-icon[data-icon-active="true"] {
+            transform: scale(1.08);
+            border-color: #2DA5A0;
+            background-color: rgba(45, 165, 160, 0.15);
+            box-shadow: 0 0 18px rgba(45, 165, 160, 0.55);
+          }
+          #process .process-step-button:focus-visible .process-icon {
+            outline: 2px solid #2DA5A0;
+            outline-offset: 2px;
           }
           @media (prefers-reduced-motion: reduce) {
             #process .process-icon,
