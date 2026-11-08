@@ -1,0 +1,103 @@
+import { readFileSync } from 'node:fs'
+import {
+    PROCESS_STEP_DWELL_MS,
+    nextProcessStep,
+    shouldRunProcessAutoplay,
+} from '@/components/landing/scroll-sections/shared/process-step-cycle'
+import path from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+const root = process.cwd()
+
+function src(rel: string): string {
+    return readFileSync(path.join(root, rel), 'utf8')
+}
+
+const FOLD = src('src/components/landing/scroll-sections/shared/processFoldStyle.tsx')
+const DESKTOP = src('src/components/landing/scroll-sections/desktop/ProcessSectionDesktop.tsx')
+const STEPS = src('src/components/landing/scroll-sections/shared/ProcessAssessmentSteps.tsx')
+const HIGHLIGHT = src('src/components/ui/fluid-hover-highlight.tsx')
+const HOOK = src('src/components/ui/use-fluid-hover.ts')
+const HERO = src('src/components/landing/HeroSection.tsx')
+const FEATURES = src('src/components/landing/scroll-sections/desktop/FeaturesSectionDesktop.tsx')
+const FEATURES_FOLD = src('src/components/landing/scroll-sections/shared/featuresFoldStyle.tsx')
+
+describe('process fold', () => {
+    it('scales the process section from 1000px without restyling hero or features', () => {
+        expect(FOLD).toContain('@media (min-width: 1000px)')
+        expect(FOLD).toContain('#process')
+        expect(FOLD).toContain('scroll-margin-top: calc(var(--landing-nav-h, 4.75rem) + 6px)')
+        expect(FOLD).toContain('padding-top: clamp(6px, 1vh, 14px)')
+        expect(FOLD).not.toContain('#features')
+        expect(FOLD).not.toContain('hero-')
+        expect(HERO).not.toContain('process-heading')
+        expect(FEATURES).not.toContain('process-heading')
+        expect(FEATURES_FOLD).not.toContain('#process')
+        expect(FOLD).not.toMatch(/\bany\b/)
+    })
+
+    it('keeps the locked process copy and the features junction padding tokens', () => {
+        expect(DESKTOP).toContain('Onboarding Questionnaire')
+        expect(DESKTOP).toContain('From your DNA to your daily protocol')
+        expect(DESKTOP).toContain('A guided assessment, then your personalized plan. Add genetics or labs anytime to deepen the protocol.')
+        expect(DESKTOP).toContain('pt-8')
+        expect(DESKTOP).toContain('md:pt-10')
+        expect(DESKTOP).not.toContain('md:pt-32')
+        expect(DESKTOP).not.toContain('min-h-screen')
+        expect(DESKTOP).toContain('ProcessFoldStyle')
+        expect(DESKTOP).toContain('ProcessAssessmentSteps')
+        expect(DESKTOP).not.toMatch(/\bany\b/)
+    })
+
+    it('lays seven steps on one row from 1000px and a scroll-snap row below', () => {
+        for (const label of [
+            'Demographics',
+            'Health History',
+            'Symptoms',
+            'Medications and Supplements',
+            'Lifestyle',
+            'Genetics Upload',
+            'Lab Upload',
+        ]) {
+            expect(STEPS).toContain(label)
+        }
+        expect(STEPS).toContain("sub: ['Physical', 'Neuro', 'Emotional']")
+        expect(STEPS).toContain('Optional')
+        expect(STEPS).toContain('strokeWidth={1.5}')
+        expect(STEPS).toContain('min-[1000px]:grid-cols-7')
+        expect(STEPS).toContain('flex-col')
+        expect(STEPS).toContain('IntersectionObserver')
+        expect(STEPS).toContain('visibilitychange')
+        expect(STEPS).toContain('clearTimeout')
+        expect(STEPS).toContain("'(prefers-reduced-motion: reduce)'")
+        expect(STEPS).toContain('FluidHoverHighlight')
+        expect(STEPS).toContain('focus-visible:outline-[#2DA5A0]')
+        expect(STEPS).not.toMatch(/\bany\b/)
+    })
+
+    it('glides with framer-motion and snaps for reduced motion', () => {
+        expect(HIGHLIGHT).toContain("from 'framer-motion'")
+        expect(HIGHLIGHT).not.toContain('motion/react')
+        expect(HIGHLIGHT).toContain('useReducedMotion')
+        expect(HIGHLIGHT).toContain('data-slot="fluid-hover-highlight"')
+        expect(HIGHLIGHT).toContain('fluidHighlightTransition')
+        expect(HOOK).toContain(':focus-visible')
+        expect(HOOK).toContain("event.pointerType === 'touch'")
+        expect(HIGHLIGHT).not.toMatch(/\bany\b/)
+        expect(HOOK).not.toMatch(/\bany\b/)
+    })
+
+    it('cycles one step at a time and pauses off-screen, hidden, or reduced', () => {
+        expect(PROCESS_STEP_DWELL_MS).toBeGreaterThanOrEqual(1500)
+        expect(PROCESS_STEP_DWELL_MS).toBeLessThanOrEqual(2000)
+        expect(nextProcessStep(0, 7)).toBe(1)
+        expect(nextProcessStep(6, 7)).toBe(0)
+        expect(nextProcessStep(3, 7)).toBe(4)
+        const live = { reduceMotion: false, inView: true, tabVisible: true, interacting: false }
+        expect(shouldRunProcessAutoplay(live)).toBe(true)
+        expect(shouldRunProcessAutoplay({ ...live, reduceMotion: true })).toBe(false)
+        expect(shouldRunProcessAutoplay({ ...live, inView: false })).toBe(false)
+        expect(shouldRunProcessAutoplay({ ...live, tabVisible: false })).toBe(false)
+        expect(shouldRunProcessAutoplay({ ...live, interacting: true })).toBe(false)
+    })
+})
