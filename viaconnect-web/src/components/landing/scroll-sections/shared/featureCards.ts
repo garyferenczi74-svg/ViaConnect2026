@@ -81,7 +81,7 @@ export const featureCards: FeatureCard[] = [
     {
         id: 'peptide-protocols',
         icon: FlaskConical,
-        headline: 'Peptide Protocols',
+        headline: 'Peptide Education',
         teaser: 'Personalized peptides across four delivery forms.',
         body: 'Peptide therapy, finally personalized. Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system.',
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['peptide-protocols'],
