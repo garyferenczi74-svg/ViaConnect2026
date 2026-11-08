@@ -150,43 +150,53 @@ export function ProcessFoldStyle() {
               white-space: nowrap;
             }
           }
-          /* Desktop type and tier cards grow past the laptop caps.
-             Scoped to #process so the hero pillar cards stay as they are. */
+          /* Desktop gives leftover fold height to the tier cards, not to
+             empty gaps. Scoped to #process so the hero cards stay as they are. */
           @media (min-width: 1200px) {
+            #process {
+              --process-icon: clamp(52px, 8vh, 92px);
+              --process-gap: clamp(16px, 1.8vh, 32px);
+            }
+            #process .process-stack {
+              max-width: min(1680px, calc(100vw - 64px)) !important;
+            }
             #process .process-heading {
-              font-size: clamp(2.35rem, 4.4vh, 3.5rem) !important;
+              font-size: clamp(2.85rem, 5.6vh, 4.5rem) !important;
             }
             #process .process-subtitle {
-              font-size: clamp(1.05rem, 1.9vh, 1.35rem) !important;
+              font-size: clamp(1.15rem, 2.2vh, 1.5rem) !important;
             }
             #process .process-note p {
-              font-size: clamp(13px, 0.95vw, 16px) !important;
+              font-size: clamp(14px, 1vw, 18px) !important;
             }
             #process .process-label {
-              font-size: clamp(12px, 1.3vh, 15px) !important;
+              font-size: clamp(13px, 1.5vh, 16px) !important;
+            }
+            #process .process-tiers {
+              flex: 1 1 auto;
+              align-items: stretch;
+              max-height: calc(100dvh - var(--landing-nav-h, 78px) - 470px);
+            }
+            #process .process-tier,
+            #process .pillar-card {
+              height: 100%;
             }
             #process .pillar-inner {
-              min-height: clamp(168px, 22vh, 240px) !important;
+              height: 100%;
+              min-height: clamp(200px, 24vh, 340px) !important;
             }
             #process .pillar-eyebrow {
-              font-size: 0.75rem !important;
+              font-size: 0.8rem !important;
             }
             #process .pillar-title {
-              font-size: clamp(1.05rem, 2vh, 1.45rem) !important;
+              font-size: clamp(1.2rem, 2.4vh, 1.75rem) !important;
             }
             #process .pillar-body {
-              font-size: clamp(0.875rem, 1.5vh, 1rem) !important;
+              font-size: clamp(0.95rem, 1.7vh, 1.125rem) !important;
               line-height: 1.4 !important;
             }
             #process .pillar-numeral {
-              font-size: clamp(3.25rem, 7vh, 5rem) !important;
-            }
-          }
-          @media (min-width: 1200px) and (min-height: 900px) {
-            #process .process-gap {
-              flex: 1 1 var(--process-gap);
-              height: auto;
-              min-height: var(--process-gap);
+              font-size: clamp(3.75rem, 8vh, 6.25rem) !important;
             }
           }
           @media (max-width: 999px) {

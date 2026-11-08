@@ -52,29 +52,41 @@ test.describe('landing desktop scale', () => {
         const heading = getComputedStyle(document.querySelector('#genomics h2') as Element).fontSize
         const ctas = [...document.querySelectorAll('.genomics-cta')].map((el) => Math.round(el.getBoundingClientRect().top))
         const rows = ctas.filter((top, index) => ctas.findIndex((other) => Math.abs(other - top) < 4) === index)
+        const actions = document.querySelector('.genomics-actions')?.getBoundingClientRect()
         return {
           panelH: panel ? Math.round(panel.height) : 0,
           panelW: panel ? Math.round(panel.width) : 0,
           heading,
           ctaSize: getComputedStyle(document.querySelector('.genomics-cta') as Element).fontSize,
           rows: rows.length,
+          actionsBottom: actions ? Math.round(actions.bottom) : 0,
           overflow: document.documentElement.scrollWidth - window.innerWidth,
         }
       })
-      expect(genomics.panelH, `${viewport.width} panel`).toBeGreaterThanOrEqual(190)
-      expect(genomics.panelW, `${viewport.width} panel width`).toBeLessThanOrEqual(420)
-      expect(parseFloat(genomics.heading), viewport.width.toString()).toBeGreaterThanOrEqual(40)
-      expect(genomics.ctaSize).toBe('16px')
+      expect(genomics.panelH, `${viewport.width} panel`).toBeGreaterThanOrEqual(200)
+      expect(genomics.panelW, `${viewport.width} panel width`).toBeGreaterThanOrEqual(340)
+      expect(genomics.panelW, `${viewport.width} panel width cap`).toBeLessThanOrEqual(620)
+      expect(parseFloat(genomics.heading), viewport.width.toString()).toBeGreaterThanOrEqual(44)
+      expect(genomics.ctaSize).toBe('17px')
       expect(genomics.rows).toBe(1)
+      expect(genomics.actionsBottom, `${viewport.width} buttons`).toBeLessThanOrEqual(viewport.height - 4)
       expect(genomics.overflow).toBeLessThanOrEqual(1)
 
       await align(page, 'features')
-      const cardBottom = await page.locator('[data-testid^="features-coverflow-card-"]').first().evaluate((el) => el.getBoundingClientRect().bottom)
-      expect(cardBottom, `${viewport.width} feature card`).toBeLessThanOrEqual(viewport.height - 8)
+      const feature = await page.locator('#features [data-active="true"]').evaluate((el) => {
+        const box = el.getBoundingClientRect()
+        return { bottom: box.bottom, width: box.width }
+      })
+      expect(feature.bottom, `${viewport.width} feature card`).toBeLessThanOrEqual(viewport.height - 8)
+      expect(feature.width, `${viewport.width} feature width`).toBeGreaterThanOrEqual(340)
 
       await align(page, 'process')
-      const tierH = await page.locator('.process-tier').first().evaluate((el) => el.getBoundingClientRect().height)
-      expect(tierH, `${viewport.width} tier`).toBeGreaterThanOrEqual(160)
+      const tier = await page.locator('.process-tier').first().evaluate((el) => {
+        const box = el.getBoundingClientRect()
+        return { height: box.height, bottom: box.bottom }
+      })
+      expect(tier.height, `${viewport.width} tier`).toBeGreaterThanOrEqual(200)
+      expect(tier.bottom, `${viewport.width} tier bottom`).toBeLessThanOrEqual(viewport.height - 8)
       const noteOverflow = await page.locator('.process-note-copy').evaluate((el) => el.scrollWidth - el.clientWidth)
       expect(noteOverflow).toBeLessThanOrEqual(1)
     }

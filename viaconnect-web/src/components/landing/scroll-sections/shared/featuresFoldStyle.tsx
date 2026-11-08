@@ -59,23 +59,23 @@ export function FeaturesFoldStyle() {
               font-size: clamp(13px, 2.4vh, 20px) !important;
             }
           }
-          /* Wider desktops can carry a larger plate. 1007px stays on the
-             short-laptop clamp above. */
+          /* Desktop plate fills the fold. 1007px stays on the clamp above. */
           @media (min-width: 1200px) {
+            #features .features-fold {
+              max-width: min(1680px, calc(100vw - 64px)) !important;
+            }
+            #features {
+              --features-card-h: clamp(440px, calc(100dvh - var(--landing-nav-h, 78px) - 250px), 640px);
+              --features-card-w: clamp(380px, 28vw, 540px);
+            }
             #features .features-heading {
-              font-size: clamp(2.5rem, 4.8vh, 3.75rem) !important;
+              font-size: clamp(2.85rem, 6vh, 4.75rem) !important;
             }
             #features .features-subtitle {
-              font-size: clamp(1.05rem, 2vh, 1.35rem) !important;
-            }
-          }
-          @media (min-width: 1440px) {
-            #features {
-              --features-card-h: clamp(400px, calc(100dvh - 5rem - 280px), 540px);
-              --features-card-w: clamp(360px, 22vw, 440px);
+              font-size: clamp(1.15rem, 2.3vh, 1.6rem) !important;
             }
             #features .features-card-title {
-              font-size: clamp(18px, 2vh, 22px) !important;
+              font-size: clamp(18px, 2.4vh, 26px) !important;
             }
           }
         `}</style>
