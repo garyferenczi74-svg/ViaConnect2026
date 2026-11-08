@@ -7,12 +7,12 @@ import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
 
 const PANELS = [
-    { icon: Dna, name: 'GeneXM', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways. The foundational panel.' },
-    { icon: Apple, name: 'NutrigenDX', accent: '#7BA85B', description: 'Nutrient absorption, metabolism, and dietary response.' },
-    { icon: Activity, name: 'HormoneIQ', accent: '#B75E18', description: 'Estrogen, testosterone, thyroid, and cortisol pathways.' },
-    { icon: Layers, name: 'EpigenHQ', accent: '#8B5CF6', description: 'Methylation patterns and epigenetic markers.' },
-    { icon: FlaskConical, name: 'PeptideIQ', accent: '#06B6D4', description: 'Peptide receptor sensitivity across metabolic, recovery, and longevity peptide families.' },
-    { icon: Leaf, name: 'CannabisIQ', accent: '#22C55E', description: 'CB1 and CB2 receptor variants, endocannabinoid metabolism.' },
+    { icon: Dna, name: 'GeneXM', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways The foundational panel' },
+    { icon: Apple, name: 'NutrigenDX', accent: '#7BA85B', description: 'Nutrient absorption, metabolism, and dietary response' },
+    { icon: Activity, name: 'HormoneIQ', accent: '#B75E18', description: 'Estrogen, testosterone, thyroid, and cortisol pathways' },
+    { icon: Layers, name: 'EpigenHQ', accent: '#8B5CF6', description: 'Methylation patterns and epigenetic markers' },
+    { icon: FlaskConical, name: 'PeptideIQ', accent: '#06B6D4', description: 'Peptide receptor sensitivity across metabolic, recovery, and longevity peptide families' },
+    { icon: Leaf, name: 'CannabisIQ', accent: '#22C55E', description: 'CB1 and CB2 receptor variants, endocannabinoid metabolism' },
 ]
 
 export function GenomicsSectionMobile() {
@@ -40,7 +40,7 @@ export function GenomicsSectionMobile() {
                         {TAGLINES.snpSubLine}
                     </p>
                     <p className="text-white/70 text-base leading-relaxed">
-                        GeneX360 reads variants across six clinical panels. Your genetics drive your protocol. Not generic averages. Not population means. You.
+                        GeneX360 reads variants across six clinical panels Your genetics drive your protocol Not generic averages Not population means You
                     </p>
                 </motion.div>
 

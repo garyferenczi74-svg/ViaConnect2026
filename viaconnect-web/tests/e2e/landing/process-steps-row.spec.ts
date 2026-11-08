@@ -61,6 +61,17 @@ async function openProcess(page: Page) {
   }
 }
 
+/** Clear space from the active circle's scaled edge plus its 18px glow to the label. */
+async function circleLabelGap(page: Page, index: number): Promise<number> {
+  return page.getByTestId(`process-step-${index}`).evaluate((el) => {
+    const icon = el.querySelector('.process-icon')?.getBoundingClientRect()
+    const label = el.querySelector('.process-label')?.getBoundingClientRect()
+    if (!icon || !label) return Number.NaN
+    const along = window.innerWidth >= 1000 ? label.top - icon.bottom : label.left - icon.right
+    return along - 18
+  })
+}
+
 async function stepTops(page: Page): Promise<number[]> {
   return page.getByTestId('process-steps').evaluate((row) => {
     return Array.from(row.querySelectorAll('li')).map((item) => (item as HTMLElement).offsetTop)
@@ -189,6 +200,8 @@ test.describe('process assessment row', () => {
     })
 
     const centers: number[] = []
+    const labelGaps: number[] = []
+    const labelGapTarget = Math.min(16, Math.max(10, 520 * 0.014))
     for (let index = 0; index < STEP_LABELS.length; index += 1) {
       const step = page.getByTestId(`process-step-${index}`)
       await step.hover()
@@ -199,6 +212,10 @@ test.describe('process assessment row', () => {
       const box = await icon.boundingBox()
       expect(box).not.toBeNull()
       if (box) centers.push(box.x + box.width / 2)
+      const labelGap = await circleLabelGap(page, index)
+      labelGaps.push(labelGap)
+      expect(Math.abs(labelGap - labelGapTarget)).toBeLessThan(2)
+      expect(Math.abs(labelGap - labelGaps[0])).toBeLessThan(1.5)
       if (index === 0) {
         await page.screenshot({
           path: '/opt/cursor/artifacts/process_circle_step1_1007x520.png',
@@ -208,6 +225,10 @@ test.describe('process assessment row', () => {
       if (index === 3) {
         await page.screenshot({
           path: '/opt/cursor/artifacts/process_circle_step4_1007x520.png',
+          fullPage: false,
+        })
+        await page.screenshot({
+          path: '/opt/cursor/artifacts/process_label_gap_step4_1007x520.png',
           fullPage: false,
         })
       }
@@ -356,9 +377,19 @@ test.describe('process assessment row', () => {
     await expect(page.getByTestId('process-step-3')).toHaveAttribute('data-active', 'true')
     await expect.poll(async () => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(80)
     await expect(page.getByTestId('process-step-3').locator('[data-icon-active="true"]')).toBeVisible()
+    await expect.poll(async () => {
+      return page.getByTestId('process-step-3').locator('.process-icon').evaluate((el) => getComputedStyle(el).transform)
+    }).toContain('1.08')
+    const mobileGap = await circleLabelGap(page, 3)
+    const mobileTarget = Math.min(16, Math.max(10, 844 * 0.014))
+    expect(Math.abs(mobileGap - mobileTarget)).toBeLessThan(2)
     await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
     await page.screenshot({
       path: '/opt/cursor/artifacts/process_circle_carousel_390.png',
+      fullPage: false,
+    })
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/process_label_gap_carousel_390.png',
       fullPage: false,
     })
 

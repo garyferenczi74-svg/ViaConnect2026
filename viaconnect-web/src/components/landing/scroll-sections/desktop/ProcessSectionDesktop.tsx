@@ -10,19 +10,19 @@ const TIER_CARDS = [
         tier: 'Tier 1',
         inputs: 'CAQ only',
         name: 'Baseline protocol',
-        description: 'Broad-spectrum nutritional support shaped by your intake questionnaire. Addresses commonly under-met nutrient categories and lifestyle-driven gaps.',
+        description: 'Broad-spectrum nutritional support shaped by your intake questionnaire Addresses commonly under-met nutrient categories and lifestyle-driven gaps',
     },
     {
         tier: 'Tier 2',
         inputs: 'CAQ plus labs',
         name: 'Biomarker-guided protocol',
-        description: 'Refines the baseline using your reported lab values. Targets nutrient categories where measured biomarkers indicate meaningful depletion or imbalance.',
+        description: 'Refines the baseline using your reported lab values Targets nutrient categories where measured biomarkers indicate meaningful depletion or imbalance',
     },
     {
         tier: 'Tier 3',
         inputs: 'CAQ plus labs plus genetics',
         name: 'Genomically integrated protocol',
-        description: 'Layers validated gene-to-nutrient pathways onto questionnaire and biomarker context. Adjusts for variants influencing absorption, conversion, and cofactor demand.',
+        description: 'Layers validated gene-to-nutrient pathways onto questionnaire and biomarker context Adjusts for variants influencing absorption, conversion, and cofactor demand',
         accent: true,
     },
 ]
@@ -57,7 +57,7 @@ export function ProcessSectionDesktop() {
                         data-testid="process-subtitle"
                         className="process-subtitle text-white/70 text-base md:text-xl max-w-3xl leading-relaxed"
                     >
-                        A guided assessment, then your personalized plan. Add genetics or labs anytime to deepen the protocol.
+                        A guided assessment, then your personalized plan Add genetics or labs anytime to deepen the protocol
                     </p>
                 </motion.div>
 
@@ -75,10 +75,10 @@ export function ProcessSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.6 }}
-                    className="process-note bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 mb-10 md:mb-16"
+                    className="process-note mb-10 md:mb-16"
                 >
-                    <p className="text-white/80 text-base leading-relaxed">
-                        Your protocol generates as soon as the assessment completes. Bio Optimization Score, supplement protocol, interaction checks, and analytics all populate together.
+                    <p className="process-note-copy text-left text-white/80 text-sm leading-relaxed min-[1000px]:whitespace-nowrap">
+                        Your protocol generates as soon as the assessment completes Bio Optimization Score, supplement protocol, interaction checks, and analytics all populate together
                     </p>
                 </motion.div>
 

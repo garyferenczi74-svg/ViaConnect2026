@@ -26,7 +26,7 @@ export function FinalCTADesktop() {
                     Your protocol is waiting
                 </h2>
                 <p className="text-white/70 text-base md:text-xl leading-relaxed mb-10 md:mb-12 max-w-2xl mx-auto">
-                    Take the assessment. Get your personalized protocol within minutes. Add genetics or labs anytime to deepen your protocol.
+                    Take the assessment Get your personalized protocol within minutes Add genetics or labs anytime to deepen your protocol
                 </p>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
                     <Link
@@ -45,7 +45,7 @@ export function FinalCTADesktop() {
                     </Link>
                 </div>
                 <p className="text-white/50 text-sm">
-                    No subscription required. Private and secure. Your data, your control.
+                    No subscription required Private and secure Your data, your control
                 </p>
             </motion.div>
         </SectionAnchor>

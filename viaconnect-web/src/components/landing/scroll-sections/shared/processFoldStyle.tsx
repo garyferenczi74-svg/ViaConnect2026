@@ -21,6 +21,9 @@ export function ProcessFoldStyle() {
               --process-gap: clamp(16px, calc(2.2vh + 0.9vw), 40px);
               --process-icon: clamp(32px, 6.4vh, 64px);
               --process-line-y: calc(clamp(4px, 0.7vh, 10px) + var(--process-icon) / 2);
+              /* Clear space from the scaled circle plus its 18px glow to the label. */
+              --process-circle-label-gap: clamp(10px, 1.4vh, 16px);
+              --process-icon-glow: 18px;
             }
             #process .process-stack {
               display: flex;
@@ -61,7 +64,7 @@ export function ProcessFoldStyle() {
             #process .process-icon {
               width: var(--process-icon) !important;
               height: var(--process-icon) !important;
-              margin-bottom: clamp(4px, 0.7vh, 10px) !important;
+              margin-bottom: calc(var(--process-circle-label-gap) + var(--process-icon-glow) + var(--process-icon) * 0.04) !important;
             }
             #process .process-icon-glyph {
               width: clamp(14px, 2.4vh, 28px) !important;
@@ -76,12 +79,16 @@ export function ProcessFoldStyle() {
               font-size: clamp(8px, 1.05vh, 11px) !important;
             }
             #process .process-note {
-              padding: clamp(8px, 1.3vh, 24px) !important;
+              padding: 0 !important;
               margin-bottom: 0 !important;
+              background: transparent !important;
+              border: 0 !important;
+              border-radius: 0 !important;
             }
             #process .process-note p {
-              font-size: clamp(12px, 1.6vh, 16px) !important;
-              line-height: 1.35 !important;
+              font-size: clamp(11px, 1.15vh, 13px) !important;
+              line-height: 1.3 !important;
+              white-space: nowrap;
             }
             #process .process-tier {
               padding: clamp(8px, 1.5vh, 28px) !important;
@@ -105,12 +112,19 @@ export function ProcessFoldStyle() {
             }
           }
           @media (max-width: 999px) {
+            #process {
+              --process-circle-label-gap: clamp(10px, 1.4vh, 16px);
+              --process-icon-glow: 18px;
+            }
             #process .process-step-row {
               scroll-snap-type: x mandatory;
               scroll-padding-inline: 0;
             }
             #process .process-step-row > li {
               scroll-snap-align: start;
+            }
+            #process .process-step-button {
+              gap: calc(var(--process-circle-label-gap) + var(--process-icon-glow) + 48px * 0.04) !important;
             }
           }
           #process .process-icon {

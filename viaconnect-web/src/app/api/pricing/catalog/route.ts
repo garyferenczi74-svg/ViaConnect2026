@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     }
     safeLog.error('api.pricing.catalog', 'unexpected error', { requestId, error });
     return NextResponse.json(
-      { error: 'We could not load live membership prices. Please try again.' },
+      { error: 'We could not load live membership prices Please try again' },
       { status: 500 },
     );
   }

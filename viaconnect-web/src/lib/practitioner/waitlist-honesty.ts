@@ -9,16 +9,16 @@ export const PRACTITIONER_WAITLIST_PATH = '/practitioners' as const;
 
 export const THREE_PORTAL_COPY = {
   headline: 'Three-Portal Ecosystem',
-  teaser: 'Consumer portal live. Clinician portals open Q1 2027.',
+  teaser: 'Consumer portal live Clinician portals open Q1 2027',
   body:
-    'Your data, on your terms. The consumer portal is live today. Practitioner and Naturopath portals (ViaCura) are on the founding waitlist for Q1 2027 launch. Privacy stays role-locked.',
+    'Your data, on your terms The consumer portal is live today Practitioner and Naturopath portals (ViaCura) are on the founding waitlist for Q1 2027 launch Privacy stays role-locked',
 } as const;
 
 export const FEATURES_INTRO_COPY = {
   desktop:
-    'One platform. Genomic testing, AI protocols, peptide therapeutics, and real-time analytics. The consumer portal is live; clinician portals (ViaCura) open Q1 2027.',
+    'One platform Genomic testing, AI protocols, peptide therapeutics, and real-time analytics The consumer portal is live; clinician portals (ViaCura) open Q1 2027',
   mobile:
-    'One platform. Genomic testing, AI protocols, peptide therapeutics. Consumer portal live; clinician portals open Q1 2027.',
+    'One platform Genomic testing, AI protocols, peptide therapeutics Consumer portal live; clinician portals open Q1 2027',
 } as const;
 
 export type ClinicianSignupRole = 'practitioner' | 'naturopath';

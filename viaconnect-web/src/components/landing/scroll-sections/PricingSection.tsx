@@ -42,7 +42,7 @@ export function PricingSection() {
                         Pick the plan that fits your journey
                     </h2>
                     <p className="text-white/70 text-base md:text-xl max-w-3xl mx-auto leading-relaxed">
-                        Every tier includes the CAQ assessment and Bio Optimization Score. Upgrade to unlock dynamic tracking, GeneX360 integration, and family coordination.
+                        Every tier includes the CAQ assessment and Bio Optimization Score Upgrade to unlock dynamic tracking, GeneX360 integration, and family coordination
                     </p>
                 </motion.div>
 

@@ -27,7 +27,7 @@ export const NAV_ITEMS = [
 export const TAGLINES = {
     master: 'Built For Your Biology',
     snpSubLine: 'Your Genetics | Your Protocol',
-    philosophy: 'Deliver the right bioavailable supplement, to the right person, guided by their genetics.',
+    philosophy: 'Deliver the right bioavailable supplement, to the right person, guided by their genetics',
 } as const
 
 export const COMPLIANCE_COPY = {

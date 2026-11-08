@@ -52,14 +52,14 @@ const LOCKED_HEADLINES = [
 ] as const;
 
 const LOCKED_BODIES = [
-    'Your DNA, decoded into a roadmap. Six clinical panels translate your genetics into clear actions, not raw data dumps you have to interpret on your own.',
-    'Stop guessing what to take. Our AI matches every supplement to your biology and picks the delivery method your body actually absorbs, so the right molecules reach the right targets.',
-    'Log meals, track your body, see the connection. Snap photos for instant macros and micronutrients, track weight, composition, measurements, and progress photos, all plotted against your protocol so you see exactly what is working.',
-    "One score across eight dimensions. Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals. Connect a device when it's available. Coming soon stays Coming soon. Missing stays UNKNOWN. Five tiers from foundational to optimized.",
-    'Peptide therapy, finally personalized. Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system.',
+    'Your DNA, decoded into a roadmap Six clinical panels translate your genetics into clear actions, not raw data dumps you have to interpret on your own',
+    'Stop guessing what to take Our AI matches every supplement to your biology and picks the delivery method your body actually absorbs, so the right molecules reach the right targets',
+    'Log meals, track your body, see the connection Snap photos for instant macros and micronutrients, track weight, composition, measurements, and progress photos, all plotted against your protocol so you see exactly what is working',
+    "One score across eight dimensions Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals Connect a device when it's available Coming soon stays Coming soon Missing stays UNKNOWN Five tiers from foundational to optimized",
+    'Peptide therapy, finally personalized Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system',
     THREE_PORTAL_COPY.body,
-    'Built to catch what humans miss. Every supplement, peptide, and herb cross-checked against your medications, allergies, and conditions before it reaches your protocol. Practitioner override available when clinical judgment calls for it.',
-    'Stick with it, get rewarded. Earn points as you log, learn, and progress. Bronze, Silver, Gold, and Platinum tiers turn the daily discipline of your protocol into something worth showing up for.',
+    'Built to catch what humans miss Every supplement, peptide, and herb cross-checked against your medications, allergies, and conditions before it reaches your protocol Practitioner override available when clinical judgment calls for it',
+    'Stick with it, get rewarded Earn points as you log, learn, and progress Bronze, Silver, Gold, and Platinum tiers turn the daily discipline of your protocol into something worth showing up for',
 ] as const;
 
 describe('landing Features coverflow data', () => {

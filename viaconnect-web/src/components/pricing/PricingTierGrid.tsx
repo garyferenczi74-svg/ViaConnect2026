@@ -74,7 +74,7 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
               throw new Error(
                 readCatalogErrorMessage(
                   body,
-                  'We could not load live membership prices. Please try again.',
+                  'We could not load live membership prices Please try again',
                 ),
               );
             }
@@ -101,7 +101,7 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
           ? error.message
           : error instanceof Error
             ? error.message
-            : 'We could not load live membership prices. Please try again.';
+            : 'We could not load live membership prices Please try again';
         setLoadState({ status: 'error', message });
       }
     })();
