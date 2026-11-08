@@ -45,7 +45,7 @@ const LOCKED_HEADLINES = [
     'AI-Driven Supplement Protocols',
     'Daily Logging',
     'Wellness Analytics and Bio Optimization Score',
-    'Peptide Protocols',
+    'Peptide Education',
     THREE_PORTAL_COPY.headline,
     'Medical and Herbal Interaction Engine',
     'Helix Rewards',
@@ -110,6 +110,11 @@ describe('landing Features coverflow data', () => {
             const bytes = readFileSync(abs);
             const svg = bytes.toString('utf8');
             expect(svg).not.toMatch(/PLACEHOLDER/);
+            if (id === 'peptide-protocols') {
+                expect(svg).toContain('<title id="title">Peptide Education</title>');
+                expect(svg).toContain('>Peptide Education</text>');
+                expect(svg).not.toContain('Peptide Protocols');
+            }
             expect(svg).not.toMatch(/Swap this file/i);
             expect(svg).not.toMatch(/unsplash\.com/i);
             expect(svg).not.toMatch(/risotto|wagyu|menu [Dd]ish/i);
