@@ -12,6 +12,10 @@ function tierGlowCss(): string {
     return groups.map(({ tier, steps, border, numeral }) => {
         const accent = TIER_ACCENTS[tier]
         if (!accent) return ''
+        // #457a00 on #0d1225 is 3.57:1, but a softer rest opacity falls under 3:1.
+        // #5ca300 keeps that olive hue (86°) and stays at 3.48:1 at 70% on the circle.
+        const stroke = tier === 0 ? '#5ca300' : accent.primary
+        const strokeRgb = tier === 0 ? '92, 163, 0' : accent.rgb
         const card = `.process-tiers .process-tier:nth-child(${tier + 1})`
         const inner = steps.map((step) => `#process:has([data-testid="process-steps"][data-active-index="${step}"]) ${card} .pillar-inner`).join(',\n')
         const numeralSel = steps.map((step) => `#process:has([data-testid="process-steps"][data-active-index="${step}"]) ${card} .pillar-numeral`).join(',\n')
@@ -30,6 +34,12 @@ function tierGlowCss(): string {
           ${line} {
             opacity: 1;
           }
+          #process .process-icon[data-tier="${tier}"] {
+            border-color: rgba(${accent.rgb}, 0.7);
+          }
+          #process .process-icon[data-tier="${tier}"] .process-icon-glyph {
+            color: rgba(${strokeRgb}, 0.7);
+          }
           #process .process-icon[data-icon-active="true"][data-tier="${tier}"] {
             transform: scale(1.08);
             border-color: ${accent.primary};
@@ -37,7 +47,7 @@ function tierGlowCss(): string {
             box-shadow: 0 0 18px rgba(${accent.rgb}, 0.55);
           }
           #process .process-icon[data-icon-active="true"][data-tier="${tier}"] .process-icon-glyph {
-            color: ${accent.primary};
+            color: ${stroke};
           }
           #process .process-step-button:focus-visible .process-icon[data-tier="${tier}"] {
             outline: 2px solid ${accent.primary};

@@ -351,21 +351,26 @@ test.describe('process assessment row', () => {
 
     await page.getByTestId('process-step-1').hover()
     await expect.poll(async () => (await accentOf(1)).border).toContain('69, 122, 0')
+    await expect.poll(async () => (await accentOf(1)).glyph).toContain('92, 163, 0')
+    expect((await accentOf(0)).border).toContain('69, 122, 0')
+    expect((await accentOf(0)).glyph).toContain('92, 163, 0')
+    expect((await accentOf(6)).border).toContain('226, 122, 44')
+    expect((await accentOf(6)).glyph).toContain('226, 122, 44')
     await expect.poll(async () => tierGlow(0)).toContain('69, 122, 0')
     expect(await tierGlow(1)).not.toContain('45, 165, 160')
-    await page.screenshot({ path: '/opt/cursor/artifacts/process_tier_sync_1_1007x520.png', fullPage: false })
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_1_1007x520.png', fullPage: false })
 
     await page.getByTestId('process-step-4').hover()
     await expect.poll(async () => (await accentOf(4)).shadow).toContain('45, 165, 160')
     await expect.poll(async () => tierGlow(1)).toContain('45, 165, 160')
-    await page.screenshot({ path: '/opt/cursor/artifacts/process_tier_sync_2_1007x520.png', fullPage: false })
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_2_1007x520.png', fullPage: false })
 
     await page.getByTestId('process-step-5').hover()
     await expect.poll(async () => (await accentOf(5)).border).toContain('226, 122, 44')
     await expect.poll(async () => tierGlow(2)).toContain('226, 122, 44')
     expect(await optionalVisibility(5)).toBe('visible')
     expect(await optionalVisibility(6)).toBe('hidden')
-    await page.screenshot({ path: '/opt/cursor/artifacts/process_tier_sync_3_1007x520.png', fullPage: false })
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_3_1007x520.png', fullPage: false })
 
     await page.getByTestId('process-step-6').hover()
     await expect.poll(async () => (await accentOf(6)).glyph).toContain('226, 122, 44')
@@ -440,7 +445,7 @@ test.describe('process assessment row', () => {
     expect(Math.abs(mobileGap - mobileTarget)).toBeLessThan(2)
     await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
     await page.screenshot({
-      path: '/opt/cursor/artifacts/process_tier_sync_390.png',
+      path: '/opt/cursor/artifacts/process_icon_tier_390.png',
       fullPage: false,
     })
     await page.screenshot({

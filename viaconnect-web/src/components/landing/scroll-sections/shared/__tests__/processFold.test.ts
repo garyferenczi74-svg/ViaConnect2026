@@ -101,6 +101,7 @@ describe('process fold', () => {
         expect(FOLD).toContain(':focus-visible .process-optional')
         expect(FOLD).toContain('OLIVE_GREEN')
         expect(FOLD).toContain('accent.primary')
+        expect(FOLD).toContain('#5ca300')
         expect(FOLD).toContain('data-active-index')
         expect(STEPS).not.toMatch(/\bany\b/)
     })
