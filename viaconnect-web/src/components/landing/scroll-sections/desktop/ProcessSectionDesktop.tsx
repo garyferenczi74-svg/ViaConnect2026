@@ -1,33 +1,14 @@
 'use client'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { PillarCard } from '@/components/landing/HeroPillars'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
 import { ProcessFoldStyle } from '../shared/processFoldStyle'
 import { ProcessAssessmentSteps } from '../shared/ProcessAssessmentSteps'
-
-const TIER_CARDS = [
-    {
-        tier: 'Tier 1',
-        inputs: 'CAQ only',
-        name: 'Baseline protocol',
-        description: 'Broad-spectrum nutritional support shaped by your intake questionnaire Addresses commonly under-met nutrient categories and lifestyle-driven gaps',
-    },
-    {
-        tier: 'Tier 2',
-        inputs: 'CAQ plus labs',
-        name: 'Biomarker-guided protocol',
-        description: 'Refines the baseline using your reported lab values Targets nutrient categories where measured biomarkers indicate meaningful depletion or imbalance',
-    },
-    {
-        tier: 'Tier 3',
-        inputs: 'CAQ plus labs plus genetics',
-        name: 'Genomically integrated protocol',
-        description: 'Layers validated gene-to-nutrient pathways onto questionnaire and biomarker context Adjusts for variants influencing absorption, conversion, and cofactor demand',
-        accent: true,
-    },
-]
+import { PROCESS_TIER_CARDS } from '../shared/processTierCards'
 
 export function ProcessSectionDesktop() {
+    const reduceMotion = useReducedMotion() ?? false
     return (
         <SectionAnchor
             id={SECTION_IDS.process}
@@ -84,21 +65,11 @@ export function ProcessSectionDesktop() {
 
                 <div className="process-gap hidden min-[1000px]:block" aria-hidden="true" />
 
-                <div data-testid="process-tiers" className="process-tiers grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {TIER_CARDS.map((tier, i) => (
-                        <motion.div
-                            key={tier.tier}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ duration: 0.5, delay: i * 0.08 }}
-                            className={`process-tier rounded-2xl p-8 border ${tier.accent ? 'bg-[#B75E18]/10 border-[#B75E18]/40' : 'bg-white/5 border-white/10'}`}
-                        >
-                            <p className="process-tier-kicker text-[#2DA5A0] text-xs uppercase tracking-wider font-medium mb-2">{tier.tier}</p>
-                            <p className="process-tier-inputs text-white/50 text-xs mb-4">{tier.inputs}</p>
-                            <h3 className="process-tier-name text-white text-xl font-medium mb-3">{tier.name}</h3>
-                            <p className="process-tier-body text-white/70 text-sm leading-relaxed">{tier.description}</p>
-                        </motion.div>
+                <div data-testid="process-tiers" role="list" className="process-tiers grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {PROCESS_TIER_CARDS.map((tier, index) => (
+                        <div key={tier.numeral} className="process-tier h-full">
+                            <PillarCard pillar={tier} index={index} reduceMotion={reduceMotion} />
+                        </div>
                     ))}
                 </div>
             </div>

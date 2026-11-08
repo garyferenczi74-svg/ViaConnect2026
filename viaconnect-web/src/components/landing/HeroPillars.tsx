@@ -26,6 +26,8 @@ export type PillarData = {
   ariaChapter: string
   headline: string
   body: string
+  /** Optional line under the eyebrow. Hero cards leave this unset. */
+  detail?: string
   accent: AccentTheme
   surfaceOverlay: string
 }
@@ -63,7 +65,7 @@ export const PILLARS: PillarData[] = [
   },
 ]
 
-function PillarCard({
+export function PillarCard({
   pillar,
   index,
   reduceMotion,
@@ -176,6 +178,15 @@ function PillarCard({
           >
             {pillar.eyebrow}
           </span>
+
+          {pillar.detail ? (
+            <p
+              className="pillar-detail mb-[clamp(2px,0.4vh,6px)] text-white/50"
+              style={{ fontSize: 'clamp(0.625rem, 1.35vh, 0.75rem)', lineHeight: 1.3 }}
+            >
+              {pillar.detail}
+            </p>
+          ) : null}
 
           <h3
             className="pillar-title mb-[clamp(2px,0.4vh,8px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white"

@@ -1,8 +1,10 @@
 'use client'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { User, Heart, Activity, Pill, Sun, Dna, FlaskConical } from 'lucide-react'
+import { PillarCard } from '@/components/landing/HeroPillars'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
+import { PROCESS_TIER_CARDS } from '../shared/processTierCards'
 
 const PHASES = [
     { icon: User, label: 'Demographics' },
@@ -14,29 +16,8 @@ const PHASES = [
     { icon: FlaskConical, label: 'Lab Upload', optional: true },
 ]
 
-const TIER_CARDS = [
-    {
-        tier: 'Tier 1',
-        inputs: 'CAQ only',
-        name: 'Baseline protocol',
-        description: 'Broad-spectrum nutritional support shaped by your intake questionnaire Addresses commonly under-met nutrient categories and lifestyle-driven gaps',
-    },
-    {
-        tier: 'Tier 2',
-        inputs: 'CAQ plus labs',
-        name: 'Biomarker-guided protocol',
-        description: 'Refines the baseline using your reported lab values Targets nutrient categories where measured biomarkers indicate meaningful depletion or imbalance',
-    },
-    {
-        tier: 'Tier 3',
-        inputs: 'CAQ plus labs plus genetics',
-        name: 'Genomically integrated protocol',
-        description: 'Layers validated gene-to-nutrient pathways onto questionnaire and biomarker context Adjusts for variants influencing absorption, conversion, and cofactor demand',
-        accent: true,
-    },
-]
-
 export function ProcessSectionMobile() {
+    const reduceMotion = useReducedMotion() ?? false
     return (
         <SectionAnchor
             id={SECTION_IDS.process}
@@ -94,21 +75,11 @@ export function ProcessSectionMobile() {
                     </p>
                 </div>
 
-                <div className="space-y-4">
-                    {TIER_CARDS.map((tier, i) => (
-                        <motion.div
-                            key={tier.tier}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.3 }}
-                            transition={{ duration: 0.4, delay: i * 0.05 }}
-                            className={`rounded-xl p-6 border ${tier.accent ? 'bg-[#B75E18]/10 border-[#B75E18]/40' : 'bg-white/5 border-white/10'}`}
-                        >
-                            <p className="text-[#2DA5A0] text-xs uppercase tracking-wider font-medium mb-1">{tier.tier}</p>
-                            <p className="text-white/50 text-xs mb-3">{tier.inputs}</p>
-                            <h3 className="text-white text-lg font-medium mb-2">{tier.name}</h3>
-                            <p className="text-white/70 text-sm leading-relaxed">{tier.description}</p>
-                        </motion.div>
+                <div className="process-tiers grid grid-cols-1 gap-4" role="list">
+                    {PROCESS_TIER_CARDS.map((tier, index) => (
+                        <div key={tier.numeral} className="process-tier h-full">
+                            <PillarCard pillar={tier} index={index} reduceMotion={reduceMotion} />
+                        </div>
                     ))}
                 </div>
             </div>

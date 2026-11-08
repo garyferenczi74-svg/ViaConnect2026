@@ -90,26 +90,6 @@ export function ProcessFoldStyle() {
               line-height: 1.3 !important;
               white-space: nowrap;
             }
-            #process .process-tier {
-              padding: clamp(8px, 1.5vh, 28px) !important;
-            }
-            #process .process-tier-kicker {
-              font-size: clamp(10px, 1.25vh, 12px) !important;
-              margin-bottom: clamp(2px, 0.3vh, 8px) !important;
-            }
-            #process .process-tier-inputs {
-              font-size: clamp(10px, 1.25vh, 12px) !important;
-              margin-bottom: clamp(4px, 0.6vh, 12px) !important;
-            }
-            #process .process-tier-name {
-              font-size: clamp(13px, 1.8vh, 20px) !important;
-              margin-bottom: clamp(3px, 0.45vh, 10px) !important;
-              line-height: 1.25 !important;
-            }
-            #process .process-tier-body {
-              font-size: clamp(11px, 1.4vh, 14px) !important;
-              line-height: 1.35 !important;
-            }
           }
           @media (max-width: 999px) {
             #process {
