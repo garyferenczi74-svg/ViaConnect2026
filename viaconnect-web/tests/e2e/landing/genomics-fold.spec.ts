@@ -90,11 +90,30 @@ test.describe('genomics fold', () => {
           gap: panels ? Math.round((actions.top - panels.bottom) * 10) / 10 : null,
         }
       })
+      const ctaRow = await page.locator('.genomics-actions a').evaluateAll((els) => {
+        const boxes = els.map((el) => el.getBoundingClientRect())
+        const tops = boxes.map((box) => Math.round(box.top))
+        const rowTops = tops.filter((top, index) => tops.findIndex((other) => Math.abs(other - top) < 4) === index)
+        return {
+          count: els.length,
+          hrefs: els.map((el) => el.getAttribute('href')),
+          labels: els.map((el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim()),
+          rows: rowTops.length,
+          overflow: (els[0]?.parentElement?.scrollWidth ?? 0) - (els[0]?.parentElement?.clientWidth ?? 0),
+        }
+      })
       if (height === 520) {
         expect(actionsBox.bottom).toBeLessThanOrEqual(height - 16)
         expect(actionsBox.gap).toBeGreaterThanOrEqual(28)
         expect(actionsBox.gap).toBeLessThanOrEqual(36)
-        console.log(`genomics-actions 520`, JSON.stringify(actionsBox))
+        expect(ctaRow.count).toBe(3)
+        expect(ctaRow.rows).toBe(1)
+        expect(ctaRow.overflow).toBeLessThanOrEqual(1)
+        expect(ctaRow.hrefs[0]).toBe('/shop/genex360')
+        expect(ctaRow.labels[0]).toBe('Choose your test')
+        expect(ctaRow.hrefs[1]).toBe('/shop?category=methylation')
+        expect(ctaRow.labels[1]).toBe('Order GeneX360 full testing protocol')
+        console.log(`genomics-actions 520`, JSON.stringify({ ...actionsBox, ...ctaRow }))
       }
       await page.screenshot({
         path: height === 520
@@ -137,6 +156,13 @@ test.describe('genomics fold', () => {
     if (!measured) return
     console.log('genomics-fold 390', JSON.stringify(measured))
     expect(measured.rows).toBeGreaterThanOrEqual(6)
+    const mobileCtas = await page.locator('.genomics-actions a').evaluateAll((els) => {
+      const tops = els.map((el) => el.getBoundingClientRect().top)
+      const rowTops = tops.filter((top, index) => tops.findIndex((other) => Math.abs(other - top) < 4) === index)
+      return { count: els.length, rows: rowTops.length }
+    })
+    expect(mobileCtas.count).toBe(3)
+    expect(mobileCtas.rows).toBe(3)
     await expect(page.getByText('PeptideIQ', { exact: true })).toBeVisible()
     await expect(page.getByText('Variants Explorer Preview', { exact: true })).toHaveCount(0)
     await page.locator('.genomics-actions').scrollIntoViewIfNeeded()

@@ -58,17 +58,23 @@ export function GenomicsFoldStyle() {
               line-height: 1.28 !important;
             }
             #genomics .genomics-actions {
-              gap: 10px !important;
+              gap: 8px !important;
             }
             #genomics .genomics-cta {
-              padding: 6px 14px !important;
-              font-size: 13px !important;
+              padding: 6px 12px !important;
+              font-size: 12.5px !important;
               line-height: 1.2 !important;
             }
             #genomics .genomics-cta svg {
               width: 14px !important;
               height: 14px !important;
               margin-left: 6px !important;
+            }
+            #genomics .genomics-cta-choose {
+              box-shadow: 0 0 10px rgba(255, 255, 255, 0.16) !important;
+            }
+            #genomics .genomics-cta-choose:hover {
+              box-shadow: 0 0 14px rgba(255, 255, 255, 0.28) !important;
             }
             #genomics .genomics-cta-order {
               box-shadow: 0 0 10px rgba(183, 94, 24, 0.28) !important;
