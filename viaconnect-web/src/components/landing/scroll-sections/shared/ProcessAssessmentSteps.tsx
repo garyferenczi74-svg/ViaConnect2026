@@ -14,6 +14,7 @@ import {
     nextProcessStep,
     shouldRunProcessAutoplay,
 } from '@/components/landing/scroll-sections/shared/process-step-cycle'
+import { tierIndexForStep } from '@/components/landing/scroll-sections/shared/processTierCards'
 
 interface AutoplayGate {
     inView: boolean
@@ -332,6 +333,7 @@ function ProcessAssessmentStep({
     useRegisterFluidHoverItem(hover.registerItem, index, itemRef)
     const Icon = phase.icon
     const active = hover.activeIndex === index
+    const tier = tierIndexForStep(index)
 
     return (
         <li
@@ -351,14 +353,13 @@ function ProcessAssessmentStep({
             >
                 <div
                     data-icon-active={active ? 'true' : 'false'}
+                    data-tier={tier}
                     className={cn(
-                        'process-icon mb-0 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-[#0d1225] transition-[border-color,box-shadow,background-color,transform] duration-300 ease-out motion-reduce:transition-none min-[1000px]:mb-2 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[#2DA5A0]',
-                        active
-                            ? 'scale-[1.08] border-[#2DA5A0] bg-[#2DA5A0]/15 shadow-[0_0_18px_rgba(45,165,160,0.55)]'
-                            : 'scale-100 border-[#2DA5A0]/40',
+                        'process-icon mb-0 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-[#0d1225] transition-[border-color,box-shadow,background-color,transform,color] duration-300 ease-out motion-reduce:transition-none min-[1000px]:mb-2 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2',
+                        active ? 'scale-[1.08]' : 'scale-100',
                     )}
                 >
-                    <Icon strokeWidth={1.5} className="process-icon-glyph h-5 w-5 text-[#2DA5A0]" aria-hidden="true" />
+                    <Icon strokeWidth={1.5} className="process-icon-glyph h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col items-start min-[1000px]:w-full min-[1000px]:flex-none min-[1000px]:items-center">
                     <p className="process-label max-w-full text-sm font-medium leading-snug text-white min-[1000px]:text-xs">

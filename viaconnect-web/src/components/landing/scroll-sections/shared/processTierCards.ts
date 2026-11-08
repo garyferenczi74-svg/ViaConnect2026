@@ -21,6 +21,13 @@ const PROCESS_TIER_COPY = [
     },
 ] as const
 
+/** Steps 1–3 share Tier 1, 4–5 share Tier 2, 6–7 share Tier 3. */
+export function tierIndexForStep(stepIndex: number): 0 | 1 | 2 {
+    if (stepIndex <= 2) return 0
+    if (stepIndex <= 4) return 1
+    return 2
+}
+
 /** Same glass chapter card as the hero pillars. Accents follow cards 01, 02, and 03. */
 export const PROCESS_TIER_CARDS: PillarData[] = PROCESS_TIER_COPY.map((card, index) => {
     const pillar = PILLARS[index]

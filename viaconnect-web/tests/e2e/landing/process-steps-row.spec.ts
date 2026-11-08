@@ -328,6 +328,63 @@ test.describe('process assessment row', () => {
     await expect(page.locator('[data-icon-active="true"]')).toHaveCount(0)
   })
 
+  test('step circles use the tier accent and light the matching card', async ({ page }) => {
+    await page.setViewportSize({ width: 1007, height: 520 })
+    await openProcess(page)
+
+    const accentOf = async (index: number) => {
+      return page.getByTestId(`process-step-${index}`).locator('.process-icon').evaluate((el) => {
+        const style = getComputedStyle(el)
+        return { border: style.borderColor, shadow: style.boxShadow, glyph: getComputedStyle(el.querySelector('.process-icon-glyph') as Element).color }
+      })
+    }
+    const tierGlow = async (tier: number) => {
+      return page.locator('.process-tier').nth(tier).locator('.pillar-inner').evaluate((el) => getComputedStyle(el).boxShadow)
+    }
+    const optionalVisibility = async (index: number) => {
+      return page.getByTestId(`process-step-${index}`).locator('.process-optional').evaluate((el) => getComputedStyle(el).visibility)
+    }
+
+    await expect(page.getByTestId('process-step-5').locator('.process-optional')).toBeAttached()
+    expect(await optionalVisibility(5)).toBe('hidden')
+    expect(await optionalVisibility(6)).toBe('hidden')
+
+    await page.getByTestId('process-step-1').hover()
+    await expect.poll(async () => (await accentOf(1)).border).toContain('69, 122, 0')
+    await expect.poll(async () => (await accentOf(1)).glyph).toContain('92, 163, 0')
+    expect((await accentOf(0)).border).toContain('69, 122, 0')
+    expect((await accentOf(0)).glyph).toContain('92, 163, 0')
+    expect((await accentOf(6)).border).toContain('226, 122, 44')
+    expect((await accentOf(6)).glyph).toContain('226, 122, 44')
+    await expect.poll(async () => tierGlow(0)).toContain('69, 122, 0')
+    expect(await tierGlow(1)).not.toContain('45, 165, 160')
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_1_1007x520.png', fullPage: false })
+
+    await page.getByTestId('process-step-4').hover()
+    await expect.poll(async () => (await accentOf(4)).shadow).toContain('45, 165, 160')
+    await expect.poll(async () => tierGlow(1)).toContain('45, 165, 160')
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_2_1007x520.png', fullPage: false })
+
+    await page.getByTestId('process-step-5').hover()
+    await expect.poll(async () => (await accentOf(5)).border).toContain('226, 122, 44')
+    await expect.poll(async () => tierGlow(2)).toContain('226, 122, 44')
+    expect(await optionalVisibility(5)).toBe('visible')
+    expect(await optionalVisibility(6)).toBe('hidden')
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_icon_tier_3_1007x520.png', fullPage: false })
+
+    await page.getByTestId('process-step-6').hover()
+    await expect.poll(async () => (await accentOf(6)).glyph).toContain('226, 122, 44')
+    expect(await optionalVisibility(6)).toBe('visible')
+    await page.screenshot({ path: '/opt/cursor/artifacts/process_optional_lab_1007x520.png', fullPage: false })
+
+    await page.mouse.move(8, 8)
+    await page.getByTestId('process-step-5').focus()
+    await page.keyboard.press('Tab')
+    await expect(page.getByTestId('process-step-6')).toBeFocused()
+    expect(await optionalVisibility(6)).toBe('visible')
+    expect(await optionalVisibility(5)).toBe('hidden')
+  })
+
   test('mobile carousel snaps one card at a time and the cycle advances slides', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openProcess(page)
@@ -378,12 +435,19 @@ test.describe('process assessment row', () => {
     await expect.poll(async () => row.evaluate((el) => el.scrollLeft)).toBeGreaterThan(80)
     await expect(page.getByTestId('process-step-3').locator('[data-icon-active="true"]')).toBeVisible()
     await expect.poll(async () => {
+      return page.getByTestId('process-step-3').locator('.process-icon').evaluate((el) => getComputedStyle(el).borderColor)
+    }).toContain('45, 165, 160')
+    await expect.poll(async () => {
       return page.getByTestId('process-step-3').locator('.process-icon').evaluate((el) => getComputedStyle(el).transform)
     }).toContain('1.08')
     const mobileGap = await circleLabelGap(page, 3)
     const mobileTarget = Math.min(16, Math.max(10, 844 * 0.014))
     expect(Math.abs(mobileGap - mobileTarget)).toBeLessThan(2)
     await expect(page.locator('[data-slot="fluid-hover-highlight"]')).toHaveCount(0)
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/process_icon_tier_390.png',
+      fullPage: false,
+    })
     await page.screenshot({
       path: '/opt/cursor/artifacts/process_circle_carousel_390.png',
       fullPage: false,

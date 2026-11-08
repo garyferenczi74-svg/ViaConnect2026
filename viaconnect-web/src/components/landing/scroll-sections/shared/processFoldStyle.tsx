@@ -1,3 +1,62 @@
+import { OLIVE_GREEN, ORANGE, TEAL } from '@/components/landing/HeroPillars'
+
+const TIER_ACCENTS = [OLIVE_GREEN, TEAL, ORANGE] as const
+
+/** Hover glow copied from the hero pillar card, keyed to the active step. */
+function tierGlowCss(): string {
+    const groups = [
+        { tier: 0, steps: [0, 1, 2], border: '0.45', numeral: '0.40' },
+        { tier: 1, steps: [3, 4], border: '0.40', numeral: '0.34' },
+        { tier: 2, steps: [5, 6], border: '0.45', numeral: '0.40' },
+    ]
+    return groups.map(({ tier, steps, border, numeral }) => {
+        const accent = TIER_ACCENTS[tier]
+        if (!accent) return ''
+        // #457a00 on #0d1225 is 3.57:1, but a softer rest opacity falls under 3:1.
+        // #5ca300 keeps that olive hue (86°) and stays at 3.48:1 at 70% on the circle.
+        const stroke = tier === 0 ? '#5ca300' : accent.primary
+        const strokeRgb = tier === 0 ? '92, 163, 0' : accent.rgb
+        const card = `.process-tiers .process-tier:nth-child(${tier + 1})`
+        const inner = steps.map((step) => `#process:has([data-testid="process-steps"][data-active-index="${step}"]) ${card} .pillar-inner`).join(',\n')
+        const numeralSel = steps.map((step) => `#process:has([data-testid="process-steps"][data-active-index="${step}"]) ${card} .pillar-numeral`).join(',\n')
+        const line = steps.map((step) => `#process:has([data-testid="process-steps"][data-active-index="${step}"]) ${card} .pillar-inner > div.h-px`).join(',\n')
+        return `
+          ${inner} {
+            border-color: rgba(${accent.rgb}, ${border});
+            box-shadow:
+              0 16px 36px -14px rgba(${accent.rgb}, 0.26),
+              0 4px 12px -6px rgba(26, 39, 68, 0.45);
+          }
+          ${numeralSel} {
+            -webkit-text-stroke-color: rgba(${accent.rgb}, ${numeral}) !important;
+            transform: translate(-3px, 3px);
+          }
+          ${line} {
+            opacity: 1;
+          }
+          #process .process-icon[data-tier="${tier}"] {
+            border-color: rgba(${accent.rgb}, 0.7);
+          }
+          #process .process-icon[data-tier="${tier}"] .process-icon-glyph {
+            color: rgba(${strokeRgb}, 0.7);
+          }
+          #process .process-icon[data-icon-active="true"][data-tier="${tier}"] {
+            transform: scale(1.08);
+            border-color: ${accent.primary};
+            background-color: rgba(${accent.rgb}, 0.15);
+            box-shadow: 0 0 18px rgba(${accent.rgb}, 0.55);
+          }
+          #process .process-icon[data-icon-active="true"][data-tier="${tier}"] .process-icon-glyph {
+            color: ${stroke};
+          }
+          #process .process-step-button:focus-visible .process-icon[data-tier="${tier}"] {
+            outline: 2px solid ${accent.primary};
+            outline-offset: 2px;
+          }
+        `
+    }).join('\n')
+}
+
 /**
  * Fits the Process fold in one viewport from 1000px up, same idea as the
  * Features fold (#297). Scoped to #process so the hero and Features section
@@ -110,22 +169,28 @@ export function ProcessFoldStyle() {
           #process .process-icon {
             transition: border-color 300ms ease, box-shadow 300ms ease, background-color 300ms ease, transform 300ms ease;
           }
-          #process .process-icon[data-icon-active="true"] {
-            transform: scale(1.08);
-            border-color: #2DA5A0;
-            background-color: rgba(45, 165, 160, 0.15);
-            box-shadow: 0 0 18px rgba(45, 165, 160, 0.55);
+          #process .process-optional {
+            visibility: hidden;
           }
-          #process .process-step-button:focus-visible .process-icon {
-            outline: 2px solid #2DA5A0;
-            outline-offset: 2px;
+          #process .process-step-button:hover .process-optional,
+          #process .process-step-button:focus-visible .process-optional {
+            visibility: visible;
           }
+          #process .pillar-inner {
+            transition: border-color 400ms ease, box-shadow 400ms ease;
+          }
+          ${tierGlowCss()}
           @media (prefers-reduced-motion: reduce) {
             #process .process-icon,
             #process .process-label,
-            #process .process-step-row {
+            #process .process-step-row,
+            #process .pillar-inner,
+            #process .pillar-numeral {
               transition: none !important;
               scroll-behavior: auto !important;
+            }
+            #process .pillar-numeral {
+              transform: none !important;
             }
           }
         `}</style>
