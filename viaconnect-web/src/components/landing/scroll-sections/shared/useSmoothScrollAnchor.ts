@@ -15,7 +15,11 @@ export function useSmoothScrollAnchor(navOffsetPx: number = 80) {
             return
         }
 
-        const top = target.getBoundingClientRect().top + window.scrollY - navOffsetPx
+        // Honor the anchor's scroll-margin-top (fixed nav clearance). Do not
+        // read --landing-nav-h here: the mobile menu inflates that bar height.
+        const scrollMargin = Number.parseFloat(getComputedStyle(target).scrollMarginTop)
+        const clearance = Math.max(navOffsetPx, Number.isFinite(scrollMargin) ? scrollMargin : 0)
+        const top = target.getBoundingClientRect().top + window.scrollY - clearance
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         window.scrollTo({ top, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
         history.pushState(null, '', `#${id}`)

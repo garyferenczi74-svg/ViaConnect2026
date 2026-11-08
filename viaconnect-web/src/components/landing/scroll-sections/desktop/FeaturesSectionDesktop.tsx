@@ -19,12 +19,15 @@ export function FeaturesSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-12 md:mb-20"
+                    className="relative z-10 mb-[clamp(32px,4vw,64px)]"
                 >
                     <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         What You Get
                     </p>
-                    <h2 data-testid="features-heading" className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
+                    <h2
+                        data-testid="features-heading"
+                        className="scroll-mt-[calc(var(--landing-nav-h,4.75rem)+1rem)] text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6"
+                    >
                         Features built for your biology
                     </h2>
                     <p className="text-white/70 text-base md:text-xl max-w-3xl leading-relaxed lg:hidden">
@@ -35,7 +38,10 @@ export function FeaturesSectionDesktop() {
                     </p>
                 </motion.div>
 
+                {/* Cards are centered in a taller stage. Cancel that top inset
+                    (34 / 40 / 50px) so the margin above is the visible gap. */}
                 <CoverFlowCarousel
+                    className="-mt-[34px] sm:-mt-[40px] md:-mt-[50px]"
                     items={coverflowFeatureCards.map((card) => ({
                         id: card.id,
                         title: card.headline,

@@ -19,12 +19,12 @@ export function FeaturesSectionMobile() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.6 }}
-                    className="mb-12"
+                    className="relative z-10 mb-[clamp(32px,4vw,64px)]"
                 >
                     <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs mb-3 font-medium">
                         What You Get
                     </p>
-                    <h2 className="text-white text-4xl font-light leading-tight mb-4">
+                    <h2 className="scroll-mt-[calc(var(--landing-nav-h,4.75rem)+1rem)] text-white text-4xl font-light leading-tight mb-4">
                         Features built for your biology
                     </h2>
                     <p className="text-white/70 text-base leading-relaxed">
@@ -33,6 +33,7 @@ export function FeaturesSectionMobile() {
                 </motion.div>
 
                 <CoverFlowCarousel
+                    className="-mt-[34px] sm:-mt-[40px] md:-mt-[50px]"
                     items={coverflowFeatureCards.map((feature) => ({
                         id: feature.id,
                         title: feature.headline,
