@@ -5,6 +5,7 @@ import { Dna, Apple, Activity, Layers, FlaskConical, Leaf, ArrowRight } from 'lu
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
+import { GenomicsPanelCard } from '../shared/GenomicsPanelCard'
 
 const PANELS = [
     { icon: Dna, name: 'GeneXM', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways The foundational panel' },
@@ -45,24 +46,23 @@ export function GenomicsSectionMobile() {
                 </motion.div>
 
                 <div className="grid grid-cols-1 gap-4 mb-12">
-                    {PANELS.map((panel, i) => {
-                        const Icon = panel.icon
-                        return (
-                            <motion.div
-                                key={panel.name}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{ duration: 0.4, delay: i * 0.05 }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6"
-                                style={{ borderTopColor: panel.accent, borderTopWidth: '2px' }}
-                            >
-                                <Icon strokeWidth={1.5} className="w-7 h-7 mb-4" style={{ color: panel.accent }} />
-                                <h3 className="text-white text-lg font-medium mb-2">{panel.name}</h3>
-                                <p className="text-white/60 text-sm leading-relaxed">{panel.description}</p>
-                            </motion.div>
-                        )
-                    })}
+                    {PANELS.map((panel, i) => (
+                        <motion.div
+                            key={panel.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ duration: 0.4, delay: i * 0.05 }}
+                            className="min-h-[140px]"
+                        >
+                            <GenomicsPanelCard
+                                icon={panel.icon}
+                                name={panel.name}
+                                accent={panel.accent}
+                                description={panel.description}
+                            />
+                        </motion.div>
+                    ))}
                 </div>
 
                 <div className="mb-10">

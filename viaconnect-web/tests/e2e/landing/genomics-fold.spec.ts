@@ -24,7 +24,7 @@ async function openGenomics(page: Page) {
     })
   }, { timeout: 5000 }).toBe(true)
   await expect.poll(async () => {
-    return page.locator('.genomics-panel').evaluateAll((els) => {
+    return page.locator('.genomics-panel-slot').evaluateAll((els) => {
       const visible = els.filter((el) => el.getBoundingClientRect().top < window.innerHeight - 8)
       if (visible.length === 0) return false
       return visible.every((el) => {
@@ -89,6 +89,52 @@ test.describe('genomics fold', () => {
     })
   }
 
+  test('descriptions stay closed until hover, then open', async ({ page }) => {
+    await page.setViewportSize({ width: 1007, height: 520 })
+    await openGenomics(page)
+
+    const closed = await page.getByTestId('genomics-panel-GeneXM').locator('.genomics-panel-body').evaluate((el) => el.getBoundingClientRect().height)
+    expect(closed).toBeLessThan(2)
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/genomics_cards_rest_1007x520.png',
+      fullPage: false,
+    })
+
+    const peptide = page.getByTestId('genomics-panel-PeptideIQ')
+    await peptide.hover()
+    await expect(peptide).toHaveAttribute('aria-expanded', 'true')
+    await expect.poll(async () => {
+      return peptide.locator('.genomics-panel-body').evaluate((el) => el.getBoundingClientRect().height)
+    }).toBeGreaterThan(20)
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/genomics_cards_hover_1007x520.png',
+      fullPage: false,
+    })
+
+    await page.evaluate(() => {
+      const card = document.querySelector('[data-testid="explorer-card-GeneXM"]')
+      const nav = document.querySelector('header nav')
+      if (!card || !nav) return
+      const top = card.getBoundingClientRect().top + window.scrollY - nav.getBoundingClientRect().height - 56
+      window.scrollTo({ top, behavior: 'auto' })
+    })
+    await page.waitForTimeout(150)
+    const explorer = page.getByTestId('explorer-card-GeneXM')
+    const explorerReveal = explorer.locator('div.grid')
+    expect(await explorerReveal.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(2)
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/genomics_explorer_rest_1007x520.png',
+      fullPage: false,
+    })
+    await explorer.hover()
+    await expect(explorer).toHaveAttribute('aria-expanded', 'true')
+    await expect.poll(async () => explorerReveal.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThan(12)
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/genomics_explorer_hover_1007x520.png',
+      fullPage: false,
+    })
+  })
+
   test('390 keeps a stacked genomics section', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openGenomics(page)
@@ -99,7 +145,7 @@ test.describe('genomics fold', () => {
     expect(measured.rows).toBeGreaterThanOrEqual(6)
     await expect(page.getByText('PeptideIQ', { exact: true })).toBeVisible()
     await page.screenshot({
-      path: '/opt/cursor/artifacts/genomics_fold_390.png',
+      path: '/opt/cursor/artifacts/genomics_cards_390.png',
       fullPage: false,
     })
   })

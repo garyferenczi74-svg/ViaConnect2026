@@ -39,7 +39,9 @@ export function GenomicsFoldStyle() {
               margin-bottom: clamp(12px, 1.6vh, 20px) !important;
             }
             #genomics .genomics-panel {
-              padding: clamp(8px, 1.15vh, 12px) !important;
+              height: clamp(136px, calc((100dvh - var(--landing-nav-h, 78px) - 168px) / 2), 210px);
+              padding: clamp(10px, 1.4vh, 16px) !important;
+              overflow: hidden;
             }
             #genomics .genomics-panel-icon {
               width: clamp(16px, 2.2vh, 22px) !important;
