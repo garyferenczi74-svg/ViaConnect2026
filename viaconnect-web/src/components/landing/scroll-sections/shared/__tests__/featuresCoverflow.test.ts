@@ -456,4 +456,52 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(daily?.underlayImageSrc).toBeUndefined();
         expect(daily?.placeholderImageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES['daily-logging']);
     });
+
+    it('loops a muted Peptide Education clip on that card only', () => {
+        const peptide = coverflowFeatureCards.find((card) => card.id === 'peptide-protocols');
+        expect(peptide?.headline).toBe('Peptide Education');
+        expect(peptide?.videoMp4Src).toBe('/videos/features/peptide-education.mp4');
+        expect(peptide?.videoWebmSrc).toBe('/videos/features/peptide-education.webm');
+        expect(peptide?.videoPosterSrc).toBe('/images/features/peptide-education-poster.webp');
+        expect(peptide?.videoObjectPosition).toBe('center 45%');
+        expect(peptide?.body.toLowerCase()).not.toMatch(/semaglutide|retatrutide/);
+        const withVideo = coverflowFeatureCards.filter((card) => card.videoMp4Src);
+        expect(withVideo.map((card) => card.id)).toEqual(['peptide-protocols']);
+
+        const mp4 = readFileSync(path.join(root, 'public/videos/features/peptide-education.mp4'));
+        const webm = readFileSync(path.join(root, 'public/videos/features/peptide-education.webm'));
+        const poster = readFileSync(path.join(root, 'public/images/features/peptide-education-poster.webp'));
+        expect(mp4.subarray(4, 8).toString('ascii')).toBe('ftyp');
+        expect([...webm.subarray(0, 4)]).toEqual([0x1a, 0x45, 0xdf, 0xa3]);
+        expect(poster.subarray(0, 4).toString('ascii')).toBe('RIFF');
+        expect(poster.subarray(8, 12).toString('ascii')).toBe('WEBP');
+        for (const bytes of [mp4, webm, poster]) {
+            expect(bytes.length).toBeGreaterThan(8_000);
+            expect(bytes.length).toBeLessThan(3_000_000);
+        }
+
+        expect(CAROUSEL).toContain('playsInline');
+        expect(CAROUSEL).toContain('preload="metadata"');
+        expect(CAROUSEL).toContain('controls={false}');
+        expect(CAROUSEL).toContain('node.pause()');
+        expect(CAROUSEL).toContain("objectPosition: item.videoObjectPosition ?? 'center 45%'");
+        expect(CAROUSEL).toContain('features-coverflow-poster-');
+        expect(DESKTOP).toContain('card.videoMp4Src');
+        expect(MOBILE).toContain('feature.videoMp4Src');
+
+        const html = renderToStaticMarkup(
+            createElement(CoverFlowCarousel, {
+                items: coverflowFeatureCards.map(toCoverFlowFeatureItem),
+            }),
+        );
+        expect(html).toContain('features-coverflow-video-peptide-protocols');
+        expect(html).toContain('peptide-education.mp4');
+        expect(html).toContain('peptide-education.webm');
+        expect(html).toContain('playsInline');
+        expect(html).toContain('preload="metadata"');
+        const videoTag = html.match(/<video\b[^>]*>/)?.[0] ?? '';
+        expect(videoTag).not.toMatch(/\scontrols[\s=]/);
+        expect(html).not.toContain('features-coverflow-video-daily-logging');
+        expect(html).not.toContain('features-coverflow-video-wellness-analytics');
+    });
 });

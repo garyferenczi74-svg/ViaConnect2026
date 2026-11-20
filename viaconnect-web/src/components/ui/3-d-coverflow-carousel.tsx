@@ -52,6 +52,11 @@ export interface CoverFlowCarouselItem {
     /** Decorative photo painted under the brand gradient. */
     imageUnderGradient?: boolean
     imageObjectPosition?: string
+    /** Decorative looping clip. No audio. Poster is the still when motion is reduced. */
+    videoMp4Src?: string
+    videoWebmSrc?: string
+    videoPosterSrc?: string
+    videoObjectPosition?: string
 }
 
 export interface CoverFlowCarouselProps {
@@ -506,6 +511,12 @@ export function CoverFlowCarousel({
                                 isActive={isActive}
                                 transform={transform}
                                 reduceMotion={!!reduceMotion}
+                                playVideo={
+                                    isActive &&
+                                    inView &&
+                                    tabVisible &&
+                                    prefersReducedMotion === false
+                                }
                                 artFailed={artFailedIds.has(item.id)}
                                 onArtError={() =>
                                     setArtFailedIds((current) => {
@@ -546,6 +557,7 @@ function CoverFlowCard({
     isActive,
     transform,
     reduceMotion,
+    playVideo,
     artFailed,
     onArtError,
     registerEl,
@@ -559,6 +571,7 @@ function CoverFlowCard({
     isActive: boolean
     transform: ReturnType<typeof coverflowTransform>
     reduceMotion: boolean
+    playVideo: boolean
     artFailed: boolean
     onArtError: () => void
     registerEl: (el: HTMLElement | null) => void
@@ -568,6 +581,19 @@ function CoverFlowCard({
     headingId: string
     bodyId: string
 }) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    useEffect(() => {
+        const node = videoRef.current
+        if (!node || !item.videoMp4Src) return
+        if (playVideo) {
+            node.muted = true
+            const pending = node.play()
+            if (pending) void pending.catch(() => {})
+            return
+        }
+        node.pause()
+    }, [item.videoMp4Src, playVideo])
     const cssTransform = coverflowCssTransform(transform)
     const hidden = transform.opacity === 0
 
@@ -609,7 +635,74 @@ function CoverFlowCard({
                         className="absolute inset-0 block overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2DA5A0]"
                         aria-label={isActive ? item.title : `Show ${item.title}`}
                     >
-                        {item.imageUnderGradient ? (
+                        {item.videoMp4Src ? (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
+                                />
+                                {reduceMotion ? (
+                                    <img
+                                        src={item.videoPosterSrc}
+                                        alt=""
+                                        aria-hidden="true"
+                                        draggable={false}
+                                        data-testid={`features-coverflow-poster-${item.id}`}
+                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                                        style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
+                                        onDragStart={(event) => event.preventDefault()}
+                                    />
+                                ) : (
+                                    <video
+                                        ref={videoRef}
+                                        aria-hidden="true"
+                                        muted
+                                        loop
+                                        playsInline
+                                        autoPlay={playVideo}
+                                        preload="metadata"
+                                        poster={item.videoPosterSrc}
+                                        controls={false}
+                                        tabIndex={-1}
+                                        draggable={false}
+                                        data-testid={`features-coverflow-video-${item.id}`}
+                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                                        style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
+                                        onDragStart={(event) => event.preventDefault()}
+                                    >
+                                        {item.videoWebmSrc ? (
+                                            <source src={item.videoWebmSrc} type="video/webm" />
+                                        ) : null}
+                                        <source src={item.videoMp4Src} type="video/mp4" />
+                                    </video>
+                                )}
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0"
+                                    style={{
+                                        backgroundImage:
+                                            'linear-gradient(to bottom right, rgba(26,39,68,0.22) 0%, rgba(22,52,58,0.16) 48%, rgba(17,24,39,0.30) 100%)',
+                                    }}
+                                />
+                                <svg
+                                    aria-hidden="true"
+                                    data-testid={`features-coverflow-orbs-${item.id}`}
+                                    className="pointer-events-none absolute inset-0 h-full w-full"
+                                    viewBox="0 0 640 800"
+                                    preserveAspectRatio="xMidYMid slice"
+                                >
+                                    <defs>
+                                        <filter id={`${item.id}-video-orb-blur`} x="-40%" y="-40%" width="180%" height="180%">
+                                            <feGaussianBlur stdDeviation="16" />
+                                        </filter>
+                                    </defs>
+                                    <g filter={`url(#${item.id}-video-orb-blur)`}>
+                                        <circle cx="520" cy="160" r="180" fill="#06B6D4" fillOpacity="0.34" />
+                                        <circle cx="90" cy="680" r="150" fill="#2DA5A0" fillOpacity="0.3" />
+                                    </g>
+                                </svg>
+                            </>
+                        ) : item.imageUnderGradient ? (
                             <>
                                 <span
                                     aria-hidden="true"
