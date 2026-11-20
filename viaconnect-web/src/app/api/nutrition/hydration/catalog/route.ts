@@ -18,7 +18,6 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
 
@@ -40,8 +39,13 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
+  // Session client, not the service-role client. Production functions do not
+  // set NEXT_PUBLIC_SUPABASE_URL, so createAdminClient throws before the
+  // query and the picker shows "Could not load beverages". Authenticated
+  // callers already have SELECT on beverage_catalog (RLS policy
+  // beverage_catalog_authenticated_read), and the session client has a
+  // URL fallback so this read still works.
+  const { data, error } = await supabase
     .from('beverage_catalog')
     .select(
       'id, slug, category, hydration_source_kind, display_name, default_volume_ml, hydration_coefficient, caffeine_mg_per_serving, kcal_per_serving, sugar_g, sodium_mg, potassium_mg, magnesium_mg, is_alcoholic, abv, evidence_source, requires_claim_review, is_active, sort_order',

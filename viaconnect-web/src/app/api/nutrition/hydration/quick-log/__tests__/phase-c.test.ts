@@ -27,13 +27,14 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
     auth: { getUser: mocks.supabaseAuth },
+    from: mocks.adminFrom,
   }),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    from: mocks.adminFrom,
-  }),
+  createAdminClient: () => {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
+  },
 }));
 
 vi.mock('@/lib/utils/safe-log', () => ({
@@ -146,6 +147,28 @@ function wireAdminMocks(args: {
 
   return { itemInsertPayloadHolder, mealInsert };
 }
+
+describe('POST /api/nutrition/hydration/quick-log when the service-role client cannot be constructed', () => {
+  it('still saves the beverage log through the signed-in session', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-1' } } });
+    mocks.checkHydrationDeduplication.mockResolvedValueOnce({
+      deduplicated: false,
+      reference_meal_id: null,
+    });
+    wireAdminMocks({ profileCountingMode: 'adjusted', catalogRow: null });
+
+    const res = await POST(buildRequest({
+      volume_ml: 240,
+      beverage_kind: 'pure_water',
+      log_surface: 'dashboard_widget',
+    }));
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.deduplicated).toBe(false);
+    expect(body.meal_id).toBe('meal-1');
+  });
+});
 
 describe('Phase C: backward compatibility with legacy 170o quick log payload', () => {
   it('accepts a request with no beverage_slug and inserts without caffeine_mg', async () => {

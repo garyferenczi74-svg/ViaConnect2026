@@ -11,7 +11,6 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { personalizeHydrationTarget } from '@/lib/nutrition/hydration/target-personalizer';
 
@@ -26,14 +25,14 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-
+  // Session client. createAdminClient throws when NEXT_PUBLIC_SUPABASE_URL
+  // is unset in production, which is why Today failed with the catalog.
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayStartIso = todayStart.toISOString();
   const dayUtc = todayStartIso.slice(0, 10);
 
-  const { data: profileRow } = await admin
+  const { data: profileRow } = await supabase
     .from('profiles')
     .select('body_weight_kg, hydration_target_ml_per_day_custom, hydration_counting_mode')
     .eq('id', user.id)
@@ -50,7 +49,7 @@ export async function GET(): Promise<NextResponse> {
   // consume the same events list without a second fetch. Append only;
   // existing fields stay identical so the 170o quick log buttons and the
   // edit panel continue reading exactly what they read before.
-  const { data: events, error: eventsErr } = await admin
+  const { data: events, error: eventsErr } = await supabase
     .from('meal_items')
     .select('meal_id, hydration_source_kind, hydration_ml, portion_volume_ml, food_name, beverage_catalog_slug, caffeine_mg, meals!inner(user_id, logged_at, meal_kind)')
     .eq('meals.user_id', user.id)

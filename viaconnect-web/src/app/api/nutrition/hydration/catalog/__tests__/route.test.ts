@@ -19,20 +19,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mocks = vi.hoisted(() => {
   return {
     supabaseAuth: vi.fn(),
-    adminFrom: vi.fn(),
+    sessionFrom: vi.fn(),
   };
 });
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
     auth: { getUser: mocks.supabaseAuth },
+    from: mocks.sessionFrom,
   }),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    from: mocks.adminFrom,
-  }),
+  createAdminClient: () => {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
+  },
 }));
 
 vi.mock('@/lib/utils/safe-log', () => ({
@@ -46,7 +47,7 @@ import { GET } from '@/app/api/nutrition/hydration/catalog/route';
 
 beforeEach(() => {
   mocks.supabaseAuth.mockReset();
-  mocks.adminFrom.mockReset();
+  mocks.sessionFrom.mockReset();
 });
 
 function mockCatalogQuery(rows: unknown[], error: { message: string } | null = null) {
@@ -54,7 +55,7 @@ function mockCatalogQuery(rows: unknown[], error: { message: string } | null = n
   const order1 = vi.fn().mockReturnValue({ order: order2 });
   const eq = vi.fn().mockReturnValue({ order: order1 });
   const select = vi.fn().mockReturnValue({ eq });
-  mocks.adminFrom.mockReturnValue({ select });
+  mocks.sessionFrom.mockReturnValue({ select });
   return { select, eq, order1, order2 };
 }
 
@@ -142,7 +143,7 @@ describe('GET /api/nutrition/hydration/catalog: BEVERAGE_CATALOG_RENDERING_ENABL
     expect(body).toEqual({ error: 'beverage catalog disabled' });
     // Kill switch short circuits before auth; supabaseAuth must not be called.
     expect(mocks.supabaseAuth).not.toHaveBeenCalled();
-    expect(mocks.adminFrom).not.toHaveBeenCalled();
+    expect(mocks.sessionFrom).not.toHaveBeenCalled();
   });
 
   it('serves the catalog when the kill switch is on (default behavior)', async () => {
@@ -154,6 +155,16 @@ describe('GET /api/nutrition/hydration/catalog: BEVERAGE_CATALOG_RENDERING_ENABL
     const res = await GET();
     expect(res.status).toBe(200);
     expect(mocks.supabaseAuth).toHaveBeenCalled();
-    expect(mocks.adminFrom).toHaveBeenCalled();
+    expect(mocks.sessionFrom).toHaveBeenCalledWith('beverage_catalog');
+  });
+});
+
+describe('GET /api/nutrition/hydration/catalog: missing service-role env', () => {
+  it('still returns the catalog when createAdminClient cannot be constructed', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-5' } } });
+    mockCatalogQuery([]);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    expect(mocks.sessionFrom).toHaveBeenCalledWith('beverage_catalog');
   });
 });

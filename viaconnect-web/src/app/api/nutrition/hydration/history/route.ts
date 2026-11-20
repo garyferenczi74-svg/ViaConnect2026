@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { personalizeHydrationTarget } from '@/lib/nutrition/hydration/target-personalizer';
 
 export const runtime = 'nodejs';
@@ -43,9 +42,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   startDate.setUTCDate(startDate.getUTCDate() - (windowDays - 1));
   const startDateStr = startDate.toISOString().slice(0, 10);
 
-  const admin = createAdminClient();
-
-  const { data: profileRow } = await admin
+  // Session client. The daily aggregation view grants SELECT to the
+  // signed-in role, and profiles are readable by their owner.
+  const { data: profileRow } = await supabase
     .from('profiles')
     .select('body_weight_kg, hydration_target_ml_per_day_custom')
     .eq('id', user.id)
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     custom_target_ml_per_day: profileRow?.hydration_target_ml_per_day_custom ?? null,
   });
 
-  const { data: aggRows, error } = await admin
+  const { data: aggRows, error } = await supabase
     .from('hydration_aggregations_daily')
     .select('day_utc, total_hydration_ml_adjusted, pure_water_ml, beverage_count, quick_log_count')
     .eq('user_id', user.id)
