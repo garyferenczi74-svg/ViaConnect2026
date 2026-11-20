@@ -412,7 +412,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).not.toContain('#0c0a09');
         expect(html).toContain('features-coverflow');
         expect(html).not.toContain('PLACEHOLDER');
-        expect(html).toContain('features-coverflow-fill-wellness-analytics');
+        expect(html).not.toContain('features-coverflow-fill-wellness-analytics');
         expect(html).toContain('features-coverflow-underlay-wellness-analytics');
         expect(html).toContain('features-coverflow-orbs-wellness-analytics');
         expect(html).not.toContain('features-coverflow-underlay-daily-logging');
@@ -424,7 +424,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('alt="Daily Logging"');
         expect(html).not.toContain('alt="Wellness Analytics and Bio Optimization Score"');
         expect(html).toContain('rgba(26,39,68,0.34)');
-        expect(html).toContain('background-size:contain');
+        expect(html).toContain('background-size:cover');
         const photo = readFileSync(path.join(root, 'public/images/features/wellness-analytics-bio-score.webp'));
         expect(photo.subarray(0, 4).toString('ascii')).toBe('RIFF');
         expect(photo.subarray(8, 12).toString('ascii')).toBe('WEBP');
@@ -434,12 +434,10 @@ describe('CoverFlowCarousel Features integration', () => {
 
     it('keeps the Wellness Analytics photo behind that card gradient only', () => {
         expect(CAROUSEL).toContain('imageUnderGradient');
-        expect(CAROUSEL).toContain('bg-contain bg-no-repeat');
-        expect(CAROUSEL).toContain('features-coverflow-fill-');
-        expect(CAROUSEL).toContain('bg-cover bg-center bg-no-repeat');
-        expect(CAROUSEL).toContain("backgroundSize: 'contain'");
-        expect(CAROUSEL).toContain('blur(28px) brightness(0.82)');
-        expect(CAROUSEL).toContain('scale(1.18)');
+        expect(CAROUSEL).toContain('bg-cover bg-no-repeat');
+        expect(CAROUSEL).not.toContain('features-coverflow-fill-');
+        expect(CAROUSEL).not.toContain('blur(28px)');
+        expect(CAROUSEL).toContain("backgroundSize: 'cover'");
         expect(CAROUSEL).toContain('from-[#1A2744] via-[#224852] to-[#111827]');
         expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
         expect(CAROUSEL).toContain('rgba(34,72,82,0.28)');
@@ -449,7 +447,6 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('fill="#76866F"');
         expect(CAROUSEL).toContain('fill="#06B6D4"');
         expect(CAROUSEL).toContain('feGaussianBlur');
-        expect(CAROUSEL).toContain('max-sm:pb-3');
         expect(DESKTOP).toContain('card.underlayImageSrc');
         expect(DESKTOP).toContain('imageUnderGradient');
         expect(MOBILE).toContain('feature.underlayImageSrc');

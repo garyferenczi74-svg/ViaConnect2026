@@ -711,25 +711,13 @@ function CoverFlowCard({
                                 />
                                 <span
                                     aria-hidden="true"
-                                    data-testid={`features-coverflow-fill-${item.id}`}
-                                    className="pointer-events-none absolute inset-0 origin-center bg-cover bg-center bg-no-repeat"
-                                    style={{
-                                        backgroundImage: `url("${item.imageSrc}")`,
-                                        filter: 'blur(28px) brightness(0.82)',
-                                        transform: 'scale(1.18)',
-                                    }}
-                                />
-                                <span
-                                    aria-hidden="true"
                                     data-testid={`features-coverflow-underlay-${item.id}`}
-                                    className="pointer-events-none absolute inset-0 bg-contain bg-no-repeat max-sm:pb-3"
+                                    className="pointer-events-none absolute inset-0 bg-cover bg-no-repeat"
                                     style={{
                                         backgroundImage: `url("${item.imageSrc}")`,
                                         backgroundPosition: item.imageObjectPosition ?? 'center center',
-                                        backgroundSize: 'contain',
+                                        backgroundSize: 'cover',
                                         backgroundRepeat: 'no-repeat',
-                                        backgroundOrigin: 'content-box',
-                                        backgroundClip: 'content-box',
                                     }}
                                 />
                                 <span
