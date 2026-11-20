@@ -68,6 +68,17 @@ async function activeCardId(page: Page): Promise<string> {
   return testId ?? ''
 }
 
+async function progressSettled(page: Page): Promise<boolean> {
+  const root = page.getByTestId('features-coverflow')
+  const [settled, progress] = await Promise.all([
+    root.getAttribute('data-settled'),
+    root.getAttribute('data-progress'),
+  ])
+  if (settled !== 'true' || progress === null) return false
+  const value = Number(progress)
+  return Number.isFinite(value) && Math.abs(value - Math.round(value)) < 0.03
+}
+
 test.describe('features coverflow navigation', () => {
   test('1007x520 has no arrows or dots, and a side card click advances', async ({ page }) => {
     await page.setViewportSize({ width: 1007, height: 520 })
@@ -92,6 +103,7 @@ test.describe('features coverflow navigation', () => {
     if (!point) return
     await page.mouse.click(point.x, point.y)
     await expect.poll(async () => activeCardId(page)).not.toBe(before)
+    await expect.poll(async () => page.getByTestId('features-coverflow').getAttribute('data-settled')).toBe('true')
 
     const details = page.locator('#features [data-active="true"] button[aria-expanded]')
     await details.click()
@@ -156,5 +168,92 @@ test.describe('features coverflow navigation', () => {
       path: '/opt/cursor/artifacts/features_fold_fit_390.png',
       fullPage: false,
     })
+  })
+
+  test('autoplay rests on a card and resumes after hover, click, drag, tab, and scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+    await page.getByTestId('hero-headline').waitFor({ state: 'visible' })
+    await page.locator('header nav').getByRole('link', { name: 'Features', exact: true }).click()
+    await page.getByTestId('features-coverflow').waitFor({ state: 'visible' })
+    await page.mouse.move(4, 4)
+
+    const rack = page.getByTestId('features-coverflow')
+    await expect.poll(async () => rack.getAttribute('data-autoplay'), { timeout: 8000 }).toBe('on')
+    await expect.poll(async () => progressSettled(page), { timeout: 4000 }).toBe(true)
+    const resting = await activeCardId(page)
+
+    await rack.hover()
+    await expect.poll(async () => rack.getAttribute('data-autoplay')).toBe('paused')
+    await expect.poll(async () => progressSettled(page), { timeout: 1500 }).toBe(true)
+
+    await page.mouse.move(4, 4)
+    await expect.poll(async () => activeCardId(page), { timeout: 7000 }).not.toBe(resting)
+    await expect.poll(async () => progressSettled(page), { timeout: 2000 }).toBe(true)
+
+    const beforeClick = await activeCardId(page)
+    const point = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll<HTMLElement>('[data-testid^="features-coverflow-card-"]')]
+      const side = cards.find(
+        (el) => el.getAttribute('data-active') !== 'true' && Number(getComputedStyle(el).opacity) > 0.35,
+      )
+      if (!side) return null
+      const rect = side.getBoundingClientRect()
+      return { x: rect.left + rect.width * 0.22, y: rect.top + rect.height * 0.45 }
+    })
+    expect(point).not.toBeNull()
+    if (!point) return
+    await page.mouse.click(point.x, point.y)
+    await expect.poll(async () => activeCardId(page), { timeout: 2000 }).not.toBe(beforeClick)
+    await page.mouse.move(4, 4)
+    const afterClick = await activeCardId(page)
+    await expect.poll(async () => rack.getAttribute('data-autoplay'), { timeout: 2000 }).toBe('on')
+    await expect.poll(async () => activeCardId(page), { timeout: 7000 }).not.toBe(afterClick)
+
+    const stage = rack.locator('[aria-roledescription="carousel"]')
+    const box = await stage.boundingBox()
+    expect(box).not.toBeNull()
+    if (!box) return
+    const y = box.y + box.height / 2
+    const x = box.x + box.width / 2
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x - 130, y, { steps: 8 })
+    await page.mouse.up()
+    await page.mouse.move(4, 4)
+    await expect.poll(async () => progressSettled(page), { timeout: 2000 }).toBe(true)
+    const afterDrag = await activeCardId(page)
+    await expect.poll(async () => rack.getAttribute('data-autoplay'), { timeout: 2000 }).toBe('on')
+    await expect.poll(async () => activeCardId(page), { timeout: 7000 }).not.toBe(afterDrag)
+
+    await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' }))
+    await expect.poll(async () => rack.getAttribute('data-autoplay')).toBe('paused')
+    await expect.poll(async () => progressSettled(page)).toBe(true)
+    await page.evaluate(() => {
+      const section = document.getElementById('features')
+      if (!section) return
+      const margin = Number.parseFloat(getComputedStyle(section).scrollMarginTop) || 80
+      const top = section.getBoundingClientRect().top + window.scrollY - margin
+      window.scrollTo({ top, behavior: 'auto' })
+    })
+    await page.mouse.move(4, 4)
+    await expect.poll(async () => rack.getAttribute('data-autoplay'), { timeout: 4000 }).toBe('on')
+    const afterScroll = await activeCardId(page)
+    await expect.poll(async () => activeCardId(page), { timeout: 7000 }).not.toBe(afterScroll)
+
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await expect.poll(async () => rack.getAttribute('data-autoplay')).toBe('paused')
+    await expect.poll(async () => progressSettled(page)).toBe(true)
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await page.mouse.move(4, 4)
+    await expect.poll(async () => rack.getAttribute('data-autoplay'), { timeout: 4000 }).toBe('on')
+    const afterTab = await activeCardId(page)
+    await expect.poll(async () => activeCardId(page), { timeout: 7000 }).not.toBe(afterTab)
   })
 })

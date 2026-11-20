@@ -15,11 +15,17 @@ import {
     COVERFLOW_AUTOPLAY_MS_PER_CARD,
     COVERFLOW_CARD_SIZE_CLASS,
     COVERFLOW_STAGE_HEIGHT_CLASS,
+    COVERFLOW_STEP_MS,
     advanceCoverflowProgress,
     coverflowCssTransform,
+    coverflowDisplayedProgress,
+    coverflowHoldMs,
+    coverflowProgressIsSettled,
+    coverflowStepProgress,
     coverflowTransform,
     nearestCoverflowIndex,
     nextClockwiseIndex,
+    releaseCoverflowInteraction,
     shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
     wrapCarouselProgress,
@@ -213,6 +219,53 @@ describe('coverflow math', () => {
         expect(shouldPauseCoverflowAutoplay({ ...idle, dropdownOpen: true })).toBe(true);
         expect(shouldPauseCoverflowAutoplay({ ...idle, reduceMotion: true })).toBe(true);
         expect(shouldPauseCoverflowAutoplay({ ...idle, reduceMotion: null })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, inView: false })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, tabVisible: false })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, inView: true, tabVisible: true })).toBe(false);
+    });
+
+    it('finishes a step on a card instead of parking between cards', () => {
+        expect(coverflowHoldMs()).toBe(COVERFLOW_AUTOPLAY_MS_PER_CARD - COVERFLOW_STEP_MS);
+        expect(COVERFLOW_STEP_MS).toBeLessThan(900);
+        expect(coverflowStepProgress(0, COVERFLOW_STEP_MS)).toBe(0);
+        expect(coverflowStepProgress(COVERFLOW_STEP_MS, COVERFLOW_STEP_MS)).toBe(1);
+
+        let progress = 2.42;
+        const target = nearestCoverflowIndex(progress, 8);
+        expect(coverflowProgressIsSettled(progress)).toBe(false);
+        for (let elapsed = 16; elapsed <= COVERFLOW_STEP_MS + 32; elapsed += 16) {
+            const amount = coverflowStepProgress(elapsed, COVERFLOW_STEP_MS);
+            progress = coverflowDisplayedProgress(2.42, target, amount, 8);
+            if (amount >= 1) break;
+        }
+        expect(coverflowProgressIsSettled(progress)).toBe(true);
+        expect(nearestCoverflowIndex(progress, 8)).toBe(target);
+        expect(progress).not.toBeCloseTo(2.42, 1);
+    });
+
+    it('drops a stuck hover or pointer when the tab hides or the rack scrolls away', () => {
+        const stuck = { hovering: true, focusWithin: true, pointerActive: true };
+        const hidden = releaseCoverflowInteraction(stuck, 'visibility-hidden');
+        expect(hidden.hovering).toBe(false);
+        expect(hidden.pointerActive).toBe(false);
+        expect(hidden.focusWithin).toBe(true);
+        const away = releaseCoverflowInteraction(
+            { hovering: true, focusWithin: false, pointerActive: true },
+            'left-viewport',
+        );
+        expect(
+            shouldPauseCoverflowAutoplay({
+                reduceMotion: false,
+                hovering: away.hovering,
+                focusWithin: away.focusWithin,
+                pointerActive: away.pointerActive,
+                dropdownOpen: false,
+                inView: true,
+                tabVisible: true,
+            }),
+        ).toBe(false);
+        expect(releaseCoverflowInteraction(stuck, 'pointer-up').pointerActive).toBe(false);
+        expect(releaseCoverflowInteraction(stuck, 'pointer-up').hovering).toBe(true);
     });
 });
 
@@ -251,15 +304,22 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(MOBILE).toContain('feature.body');
     });
 
-    it('glides continuously with rAF and does not auto-rotate under reduced motion', () => {
+    it('steps between settled cards with rAF and does not freeze mid-transition', () => {
         expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(2800);
         expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBeLessThan(6000);
         expect(CAROUSEL).toContain('COVERFLOW_AUTOPLAY_MS_PER_CARD');
-        expect(CAROUSEL).toContain('advanceCoverflowProgress');
+        expect(CAROUSEL).toContain('coverflowStepProgress');
+        expect(CAROUSEL).toContain('coverflowDisplayedProgress');
+        expect(CAROUSEL).toContain('finishStepNow');
+        expect(CAROUSEL).toContain('visibilitychange');
+        expect(CAROUSEL).toContain('IntersectionObserver');
+        expect(CAROUSEL).toContain(":focus-visible");
         expect(CAROUSEL).toContain('requestAnimationFrame');
         expect(CAROUSEL).toContain('cancelAnimationFrame');
         expect(CAROUSEL).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
         expect(CAROUSEL).not.toContain('setTimeout');
+        expect(CAROUSEL).not.toContain('will-change-transform');
+        expect(CAROUSEL).not.toContain('transform 0.35s');
         expect(MATH).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
         expect(MATH).not.toMatch(/2000/);
         expect(CAROUSEL).toContain('nextClockwiseIndex');
@@ -276,7 +336,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('data-autoplay');
         expect(CAROUSEL).toContain('data-motion');
         expect(CAROUSEL).toContain('data-motion-pref');
-        expect(CAROUSEL).toContain('continuous');
+        expect(CAROUSEL).toContain('dataset.settled');
+        expect(CAROUSEL).toContain('dataset.phase');
         expect(CAROUSEL).not.toMatch(/transform 0\.45s/);
         expect(CAROUSEL).not.toContain('useReducedMotion');
     });

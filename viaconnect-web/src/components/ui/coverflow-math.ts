@@ -4,8 +4,14 @@
  * without mounting the client component.
  */
 
-/** Milliseconds to glide one card during continuous autoplay. Not a dwell. */
+/**
+ * One card cycle. Most of it is a settled hold so the front card is readable.
+ * The move itself is COVERFLOW_STEP_MS. Autoplay must not park between cards.
+ */
 export const COVERFLOW_AUTOPLAY_MS_PER_CARD = 2800
+
+/** Short ease from one settled card to the next. Always runs to completion. */
+export const COVERFLOW_STEP_MS = 560
 
 /** Mobile 390 keeps the compact #150 plate. Tablet/desktop restore a coverflow hero. */
 export const COVERFLOW_STAGE_HEIGHT_CLASS =
@@ -57,9 +63,83 @@ export function shouldPauseCoverflowAutoplay(input: {
     focusWithin: boolean
     pointerActive: boolean
     dropdownOpen: boolean
+    /** Missing means "still on screen". Only an explicit false pauses. */
+    inView?: boolean
+    /** Missing means "tab visible". Only an explicit false pauses. */
+    tabVisible?: boolean
 }): boolean {
     if (input.reduceMotion !== false) return true
+    if (input.inView === false || input.tabVisible === false) return true
     return input.hovering || input.focusWithin || input.pointerActive || input.dropdownOpen
+}
+
+export function coverflowHoldMs(
+    msPerCard = COVERFLOW_AUTOPLAY_MS_PER_CARD,
+    stepMs = COVERFLOW_STEP_MS,
+): number {
+    return Math.max(0, msPerCard - stepMs)
+}
+
+/** 0 at the start of a step, 1 once the step must be on the destination card. */
+export function coverflowStepProgress(elapsedMs: number, stepMs: number): number {
+    if (stepMs <= 0) return 1
+    const t = Math.max(0, Math.min(1, elapsedMs / stepMs))
+    return 1 - (1 - t) ** 3
+}
+
+export function coverflowProgressIsSettled(progress: number, epsilon = 0.02): boolean {
+    if (!Number.isFinite(progress)) return true
+    return Math.abs(progress - Math.round(progress)) <= epsilon
+}
+
+/** Shortest-path blend. amount 1 lands on `to`, never short of it. */
+export function coverflowDisplayedProgress(
+    from: number,
+    to: number,
+    amount: number,
+    length: number,
+): number {
+    if (length <= 0) return 0
+    const start = wrapCarouselProgress(from, length)
+    const end = wrapCarouselProgress(to, length)
+    let delta = end - start
+    if (delta > length / 2) delta -= length
+    if (delta < -length / 2) delta += length
+    const t = Math.max(0, Math.min(1, amount))
+    if (t >= 1) return end
+    return wrapCarouselProgress(start + delta * t, length)
+}
+
+export interface CoverflowInteractionFlags {
+    hovering: boolean
+    focusWithin: boolean
+    pointerActive: boolean
+}
+
+export type CoverflowReleaseReason =
+    | 'visibility-hidden'
+    | 'left-viewport'
+    | 'window-blur'
+    | 'pointer-up'
+    | 'pointer-cancel'
+
+/**
+ * Hover and an in-flight pointer stick across tab hides and scroll-away
+ * because pointerleave / pointerup never fire. Drop those. Keyboard focus
+ * stays, so arrow-key use still holds the rack.
+ */
+export function releaseCoverflowInteraction(
+    current: CoverflowInteractionFlags,
+    reason: CoverflowReleaseReason,
+): CoverflowInteractionFlags {
+    if (reason === 'pointer-up' || reason === 'pointer-cancel') {
+        return { ...current, pointerActive: false }
+    }
+    return {
+        hovering: false,
+        focusWithin: current.focusWithin,
+        pointerActive: false,
+    }
 }
 
 export function shortestCarouselOffset(
