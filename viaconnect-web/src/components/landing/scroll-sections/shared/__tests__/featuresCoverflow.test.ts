@@ -412,6 +412,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).not.toContain('#0c0a09');
         expect(html).toContain('features-coverflow');
         expect(html).not.toContain('PLACEHOLDER');
+        expect(html).toContain('features-coverflow-fill-wellness-analytics');
         expect(html).toContain('features-coverflow-underlay-wellness-analytics');
         expect(html).toContain('features-coverflow-orbs-wellness-analytics');
         expect(html).not.toContain('features-coverflow-underlay-daily-logging');
@@ -434,8 +435,11 @@ describe('CoverFlowCarousel Features integration', () => {
     it('keeps the Wellness Analytics photo behind that card gradient only', () => {
         expect(CAROUSEL).toContain('imageUnderGradient');
         expect(CAROUSEL).toContain('bg-contain bg-no-repeat');
-        expect(CAROUSEL).not.toContain('bg-cover');
+        expect(CAROUSEL).toContain('features-coverflow-fill-');
+        expect(CAROUSEL).toContain('bg-cover bg-center bg-no-repeat');
         expect(CAROUSEL).toContain("backgroundSize: 'contain'");
+        expect(CAROUSEL).toContain('blur(28px) brightness(0.82)');
+        expect(CAROUSEL).toContain('scale(1.18)');
         expect(CAROUSEL).toContain('from-[#1A2744] via-[#224852] to-[#111827]');
         expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
         expect(CAROUSEL).toContain('rgba(34,72,82,0.28)');
@@ -485,6 +489,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('controls={false}');
         expect(CAROUSEL).toContain('node.pause()');
         expect(CAROUSEL).toContain("objectPosition: item.videoObjectPosition ?? 'center 45%'");
+        expect(CAROUSEL).toContain('features-coverflow-orbs-${item.id}');
+        expect(CAROUSEL).toContain('z-10 h-full w-full');
         expect(CAROUSEL).toContain('features-coverflow-poster-');
         expect(DESKTOP).toContain('card.videoMp4Src');
         expect(MOBILE).toContain('feature.videoMp4Src');
@@ -495,6 +501,10 @@ describe('CoverFlowCarousel Features integration', () => {
             }),
         );
         expect(html).toContain('features-coverflow-video-peptide-protocols');
+        expect(html).toContain('features-coverflow-orbs-peptide-protocols');
+        expect(html.indexOf('features-coverflow-orbs-peptide-protocols')).toBeGreaterThan(
+            html.indexOf('features-coverflow-video-peptide-protocols'),
+        );
         expect(html).toContain('peptide-education.mp4');
         expect(html).toContain('peptide-education.webm');
         expect(html).toContain('playsInline');
