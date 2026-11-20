@@ -49,6 +49,9 @@ export interface CoverFlowCarouselItem {
     description: string
     imageSrc: string
     imageAlt: string
+    /** Decorative photo painted under the brand gradient. */
+    imageUnderGradient?: boolean
+    imageObjectPosition?: string
 }
 
 export interface CoverFlowCarouselProps {
@@ -606,19 +609,43 @@ function CoverFlowCard({
                         className="absolute inset-0 block overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2DA5A0]"
                         aria-label={isActive ? item.title : `Show ${item.title}`}
                     >
-                        <span
-                            aria-hidden="true"
-                            className="absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
-                        />
-                        {artFailed ? null : (
-                            <img
-                                src={item.imageSrc}
-                                alt={item.imageAlt}
-                                draggable={false}
-                                className="absolute inset-0 h-full w-full object-cover"
-                                onError={onArtError}
-                                onDragStart={(event) => event.preventDefault()}
-                            />
+                        {item.imageUnderGradient ? (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    data-testid={`features-coverflow-underlay-${item.id}`}
+                                    className="pointer-events-none absolute inset-0 bg-cover bg-no-repeat"
+                                    style={{
+                                        backgroundImage: `url("${item.imageSrc}")`,
+                                        backgroundPosition: item.imageObjectPosition ?? 'center center',
+                                    }}
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0"
+                                    style={{
+                                        backgroundImage:
+                                            'linear-gradient(to bottom right, rgba(26,39,68,0.72) 0%, rgba(34,72,82,0.66) 48%, rgba(17,24,39,0.80) 100%)',
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
+                                />
+                                {artFailed ? null : (
+                                    <img
+                                        src={item.imageSrc}
+                                        alt={item.imageAlt}
+                                        draggable={false}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                        onError={onArtError}
+                                        onDragStart={(event) => event.preventDefault()}
+                                    />
+                                )}
+                            </>
                         )}
                     </button>
                     <AnimatePresence initial={false}>
