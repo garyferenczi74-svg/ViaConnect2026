@@ -38,8 +38,10 @@ export function FeaturesSectionMobile() {
                         id: feature.id,
                         title: feature.headline,
                         description: feature.body,
-                        imageSrc: feature.placeholderImageSrc ?? '',
-                        imageAlt: feature.headline,
+                        imageSrc: feature.underlayImageSrc ?? feature.placeholderImageSrc ?? '',
+                        imageAlt: feature.underlayImageSrc ? '' : feature.headline,
+                        imageUnderGradient: Boolean(feature.underlayImageSrc),
+                        imageObjectPosition: feature.underlayObjectPosition,
                     }))}
                 />
             </div>

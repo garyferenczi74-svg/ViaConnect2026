@@ -49,6 +49,9 @@ export interface CoverFlowCarouselItem {
     description: string
     imageSrc: string
     imageAlt: string
+    /** Decorative photo painted under the brand gradient. */
+    imageUnderGradient?: boolean
+    imageObjectPosition?: string
 }
 
 export interface CoverFlowCarouselProps {
@@ -606,19 +609,69 @@ function CoverFlowCard({
                         className="absolute inset-0 block overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2DA5A0]"
                         aria-label={isActive ? item.title : `Show ${item.title}`}
                     >
-                        <span
-                            aria-hidden="true"
-                            className="absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
-                        />
-                        {artFailed ? null : (
-                            <img
-                                src={item.imageSrc}
-                                alt={item.imageAlt}
-                                draggable={false}
-                                className="absolute inset-0 h-full w-full object-cover"
-                                onError={onArtError}
-                                onDragStart={(event) => event.preventDefault()}
-                            />
+                        {item.imageUnderGradient ? (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    data-testid={`features-coverflow-underlay-${item.id}`}
+                                    className="pointer-events-none absolute inset-0 bg-contain bg-no-repeat max-sm:pb-3"
+                                    style={{
+                                        backgroundImage: `url("${item.imageSrc}")`,
+                                        backgroundPosition: item.imageObjectPosition ?? 'center center',
+                                        backgroundSize: 'contain',
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundOrigin: 'content-box',
+                                        backgroundClip: 'content-box',
+                                    }}
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0"
+                                    style={{
+                                        backgroundImage:
+                                            'linear-gradient(to bottom right, rgba(26,39,68,0.34) 0%, rgba(34,72,82,0.28) 48%, rgba(17,24,39,0.42) 100%)',
+                                    }}
+                                />
+                                <svg
+                                    aria-hidden="true"
+                                    data-testid={`features-coverflow-orbs-${item.id}`}
+                                    className="pointer-events-none absolute inset-0 h-full w-full"
+                                    viewBox="0 0 640 800"
+                                    preserveAspectRatio="xMidYMid slice"
+                                >
+                                    <defs>
+                                        <filter id={`${item.id}-orb-blur`} x="-45%" y="-45%" width="190%" height="190%">
+                                            <feGaussianBlur stdDeviation="26" />
+                                        </filter>
+                                    </defs>
+                                    <g filter={`url(#${item.id}-orb-blur)`}>
+                                        <circle cx="150" cy="150" r="150" fill="#2DA5A0" fillOpacity="0.72" />
+                                        <circle cx="520" cy="170" r="120" fill="#06B6D4" fillOpacity="0.68" />
+                                        <circle cx="100" cy="690" r="145" fill="#76866F" fillOpacity="0.7" />
+                                    </g>
+                                </svg>
+                            </>
+                        ) : (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
+                                />
+                                {artFailed ? null : (
+                                    <img
+                                        src={item.imageSrc}
+                                        alt={item.imageAlt}
+                                        draggable={false}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                        onError={onArtError}
+                                        onDragStart={(event) => event.preventDefault()}
+                                    />
+                                )}
+                            </>
                         )}
                     </button>
                     <AnimatePresence initial={false}>

@@ -50,8 +50,10 @@ export function FeaturesSectionDesktop() {
                         id: card.id,
                         title: card.headline,
                         description: card.body,
-                        imageSrc: card.placeholderImageSrc ?? '',
-                        imageAlt: card.headline,
+                        imageSrc: card.underlayImageSrc ?? card.placeholderImageSrc ?? '',
+                        imageAlt: card.underlayImageSrc ? '' : card.headline,
+                        imageUnderGradient: Boolean(card.underlayImageSrc),
+                        imageObjectPosition: card.underlayObjectPosition,
                     }))}
                 />
             </div>

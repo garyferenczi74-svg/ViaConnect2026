@@ -19,6 +19,9 @@ export interface FeatureCard {
     body: string
     /** Labeled still Gary can replace one-by-one. Landing coverflow only. */
     placeholderImageSrc?: string
+    /** Decorative photo drawn under the card gradient. Landing coverflow only. */
+    underlayImageSrc?: string
+    underlayObjectPosition?: string
 }
 
 export const COVERFLOW_FEATURE_IDS = [
@@ -77,6 +80,8 @@ export const featureCards: FeatureCard[] = [
         teaser: "Connect a device when it's available Coming soon stays Coming soon Missing stays UNKNOWN",
         body: "One score across eight dimensions Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals Connect a device when it's available Coming soon stays Coming soon Missing stays UNKNOWN Five tiers from foundational to optimized",
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['wellness-analytics'],
+        underlayImageSrc: '/images/features/wellness-analytics-bio-score.webp',
+        underlayObjectPosition: 'center center',
     },
     {
         id: 'peptide-protocols',
@@ -121,11 +126,14 @@ export const coverflowFeatureCards: FeatureCard[] = COVERFLOW_FEATURE_IDS.map((i
 })
 
 export function toCoverFlowFeatureItem(card: FeatureCard) {
+    const underlay = card.underlayImageSrc
     return {
         id: card.id,
         title: card.headline,
         description: card.body,
-        imageSrc: card.placeholderImageSrc ?? '',
-        imageAlt: card.headline,
+        imageSrc: underlay ?? card.placeholderImageSrc ?? '',
+        imageAlt: underlay ? '' : card.headline,
+        imageUnderGradient: Boolean(underlay),
+        imageObjectPosition: card.underlayObjectPosition,
     }
 }
