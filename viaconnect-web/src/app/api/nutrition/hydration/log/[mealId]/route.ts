@@ -12,8 +12,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import { HYDRATION_SOURCE_KINDS, type HydrationSourceKind } from '@/lib/nutrition/hydration/types';
@@ -43,8 +43,8 @@ interface RouteContext {
   params: Promise<{ mealId: string }>;
 }
 
-async function loadOwnedMeal(adminClient: ReturnType<typeof createAdminClient>, mealId: string, userId: string) {
-  const { data: meal } = await adminClient
+async function loadOwnedMeal(db: SupabaseClient, mealId: string, userId: string) {
+  const { data: meal } = await db
     .from('meals')
     .select('meal_id, user_id, meal_kind, logged_at')
     .eq('meal_id', mealId)
@@ -77,20 +77,22 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  const admin = createAdminClient();
-  const meal = await loadOwnedMeal(admin, (await ctx.params).mealId, user.id);
+  // Session client. Owner policies cover meals and meal_items. The
+  // service-role client throws when NEXT_PUBLIC_SUPABASE_URL is unset.
+  const db = supabase as unknown as SupabaseClient;
+  const meal = await loadOwnedMeal(db, (await ctx.params).mealId, user.id);
   if (!meal) {
     return NextResponse.json({ error: 'Hydration log not found' }, { status: 404 });
   }
 
-  const { data: profileRow } = await admin
+  const { data: profileRow } = await db
     .from('profiles')
     .select('hydration_counting_mode')
     .eq('id', user.id)
     .maybeSingle();
   const countingMode = (profileRow?.hydration_counting_mode === 'adjusted' ? 'adjusted' : 'conservative') as 'conservative' | 'adjusted';
 
-  const { data: itemRow } = await admin
+  const { data: itemRow } = await db
     .from('meal_items')
     .select('id, hydration_source_kind, portion_volume_ml, food_name')
     .eq('meal_id', (await ctx.params).mealId)
@@ -121,7 +123,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
     food_name: foodName,
   });
 
-  const { error: itemErr } = await admin
+  const { error: itemErr } = await db
     .from('meal_items')
     .update({
       portion_volume_ml: newVolume,
@@ -139,7 +141,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
   }
 
   if (meal.meal_kind === 'hydration_only') {
-    await admin
+    await db
       .from('meals')
       .update({ meal_name: foodName })
       .eq('meal_id', (await ctx.params).mealId);
@@ -168,14 +170,16 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const meal = await loadOwnedMeal(admin, (await ctx.params).mealId, user.id);
+  // Session client. Owner policies cover meals and meal_items. The
+  // service-role client throws when NEXT_PUBLIC_SUPABASE_URL is unset.
+  const db = supabase as unknown as SupabaseClient;
+  const meal = await loadOwnedMeal(db, (await ctx.params).mealId, user.id);
   if (!meal) {
     return NextResponse.json({ error: 'Hydration log not found' }, { status: 404 });
   }
 
   if (meal.meal_kind === 'hydration_only') {
-    const { error: mealErr } = await admin
+    const { error: mealErr } = await db
       .from('meals')
       .delete()
       .eq('meal_id', (await ctx.params).mealId);
@@ -184,7 +188,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
       return NextResponse.json({ error: 'Could not delete hydration log' }, { status: 500 });
     }
   } else {
-    const { error: itemErr } = await admin
+    const { error: itemErr } = await db
       .from('meal_items')
       .delete()
       .eq('meal_id', (await ctx.params).mealId)

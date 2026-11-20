@@ -36,13 +36,14 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
     auth: { getUser: mocks.supabaseAuth },
+    from: mocks.adminFrom,
   }),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    from: mocks.adminFrom,
-  }),
+  createAdminClient: () => {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
+  },
 }));
 
 vi.mock('@/lib/utils/safe-log', () => ({

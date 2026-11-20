@@ -8,7 +8,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { TargetUpdateSchema } from '@/lib/nutrition/hydration/types';
 import { personalizeHydrationTarget } from '@/lib/nutrition/hydration/target-personalizer';
@@ -36,9 +35,8 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid body', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const admin = createAdminClient();
-
-  const { error: updateErr } = await admin
+  // Session client. The owner update policy on profiles is auth.uid() = id.
+  const { error: updateErr } = await supabase
     .from('profiles')
     .update({ hydration_target_ml_per_day_custom: parsed.data.custom_target_ml_per_day })
     .eq('id', user.id);
@@ -48,7 +46,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  const { data: profileRow } = await admin
+  const { data: profileRow } = await supabase
     .from('profiles')
     .select('body_weight_kg, hydration_target_ml_per_day_custom')
     .eq('id', user.id)

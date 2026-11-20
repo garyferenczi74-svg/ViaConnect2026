@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PreferencesUpdateSchema } from '@/lib/nutrition/hydration/types';
 
@@ -24,8 +23,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data: profileRow } = await admin
+  // Session client. Owner select/update policies on profiles cover this.
+  const { data: profileRow } = await supabase
     .from('profiles')
     .select('hydration_counting_mode, hydration_notifications_enabled, hydration_notification_cadence')
     .eq('id', user.id)
@@ -58,7 +57,6 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid body', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const updates: Record<string, unknown> = {};
   if (parsed.data.counting_mode !== undefined) updates.hydration_counting_mode = parsed.data.counting_mode;
   if (parsed.data.notifications_enabled !== undefined) updates.hydration_notifications_enabled = parsed.data.notifications_enabled;
@@ -68,7 +66,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, updated: false });
   }
 
-  const { error: updateErr } = await admin
+  const { error: updateErr } = await supabase
     .from('profiles')
     .update(updates)
     .eq('id', user.id);

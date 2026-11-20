@@ -30,8 +30,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import {
@@ -116,7 +116,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { volume_ml, beverage_kind, captured_at, log_surface, beverage_slug, user_beverage_id } = parsed.data;
   const loggedAtIso = captured_at ?? new Date().toISOString();
-  const admin = createAdminClient();
+  // Session client. createAdminClient throws before the insert when
+  // NEXT_PUBLIC_SUPABASE_URL is unset, so a beverage log never saved.
+  // Owner RLS covers meals, meal_items, profiles, and user_beverages.
+  const admin = supabase as unknown as SupabaseClient;
 
   const dedup = await checkHydrationDeduplication({
     admin,
@@ -483,7 +486,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
  * pessimistically on an admin auth fail.
  */
 async function countDailyAlcoholicDrinks(args: {
-  admin: ReturnType<typeof createAdminClient>;
+  admin: SupabaseClient;
   user_id: string;
   day_anchor_iso: string;
 }): Promise<number> {
