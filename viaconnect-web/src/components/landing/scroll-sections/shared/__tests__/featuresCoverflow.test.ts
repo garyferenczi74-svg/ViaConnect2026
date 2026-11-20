@@ -413,7 +413,9 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('features-coverflow');
         expect(html).not.toContain('PLACEHOLDER');
         expect(html).toContain('features-coverflow-underlay-wellness-analytics');
+        expect(html).toContain('features-coverflow-orbs-wellness-analytics');
         expect(html).not.toContain('features-coverflow-underlay-daily-logging');
+        expect(html).not.toContain('features-coverflow-orbs-daily-logging');
         expect(html).not.toContain('features-coverflow-underlay-genomic-testing');
         expect(html).toContain('wellness-analytics-bio-score.webp');
         expect(html).not.toContain('daily-logging-bio-score.webp');
@@ -438,6 +440,12 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
         expect(CAROUSEL).toContain('rgba(34,72,82,0.28)');
         expect(CAROUSEL).toContain('rgba(17,24,39,0.42)');
+        expect(CAROUSEL).toContain('features-coverflow-orbs-');
+        expect(CAROUSEL).toContain('fill="#2DA5A0"');
+        expect(CAROUSEL).toContain('fill="#76866F"');
+        expect(CAROUSEL).toContain('fill="#06B6D4"');
+        expect(CAROUSEL).toContain('feGaussianBlur');
+        expect(CAROUSEL).toContain('max-sm:pb-3');
         expect(DESKTOP).toContain('card.underlayImageSrc');
         expect(DESKTOP).toContain('imageUnderGradient');
         expect(MOBILE).toContain('feature.underlayImageSrc');
