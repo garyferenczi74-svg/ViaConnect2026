@@ -484,7 +484,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('preload="metadata"');
         expect(CAROUSEL).toContain('controls={false}');
         expect(CAROUSEL).toContain('node.pause()');
-        expect(CAROUSEL).toContain("objectPosition: item.videoObjectPosition ?? 'center 45%'");
+        expect(CAROUSEL).toContain('object-cover object-[center_45%] sm:object-contain sm:object-center');
         expect(CAROUSEL).toContain('features-coverflow-poster-');
         expect(DESKTOP).toContain('card.videoMp4Src');
         expect(MOBILE).toContain('feature.videoMp4Src');

@@ -648,8 +648,7 @@ function CoverFlowCard({
                                         aria-hidden="true"
                                         draggable={false}
                                         data-testid={`features-coverflow-poster-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                                        style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
+                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_45%] sm:object-contain sm:object-center"
                                         onDragStart={(event) => event.preventDefault()}
                                     />
                                 ) : (
@@ -666,8 +665,7 @@ function CoverFlowCard({
                                         tabIndex={-1}
                                         draggable={false}
                                         data-testid={`features-coverflow-video-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                                        style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
+                                        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-[center_45%] sm:object-contain sm:object-center"
                                         onDragStart={(event) => event.preventDefault()}
                                     >
                                         {item.videoWebmSrc ? (
