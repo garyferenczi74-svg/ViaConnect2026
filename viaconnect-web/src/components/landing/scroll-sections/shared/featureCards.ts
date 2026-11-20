@@ -61,6 +61,8 @@ export const featureCards: FeatureCard[] = [
         teaser: 'Your DNA decoded into a clear roadmap',
         body: 'Your DNA, decoded into a roadmap Six clinical panels translate your genetics into clear actions, not raw data dumps you have to interpret on your own',
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['genomic-testing'],
+        underlayImageSrc: '/images/features/genex360-kit.webp',
+        underlayObjectPosition: 'center center',
     },
     {
         id: 'ai-protocols',

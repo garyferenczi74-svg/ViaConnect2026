@@ -107,6 +107,11 @@ describe('landing Features coverflow data', () => {
                 expect(item.imageAlt).toBe('');
                 expect(item.imageUnderGradient).toBe(true);
                 expect(item.imageObjectPosition).toBe('center center');
+            } else if (item.id === 'genomic-testing') {
+                expect(item.imageSrc).toBe('/images/features/genex360-kit.webp');
+                expect(item.imageAlt).toBe('');
+                expect(item.imageUnderGradient).toBe(true);
+                expect(item.imageObjectPosition).toBe('center center');
             } else {
                 expect(item.imageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES[COVERFLOW_FEATURE_IDS[index]]);
                 expect(item.imageAlt).toBe(LOCKED_HEADLINES[index]);
@@ -415,12 +420,14 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).not.toContain('features-coverflow-fill-wellness-analytics');
         expect(html).toContain('features-coverflow-underlay-wellness-analytics');
         expect(html).toContain('features-coverflow-orbs-wellness-analytics');
+        expect(html).toContain('features-coverflow-underlay-genomic-testing');
+        expect(html).toContain('features-coverflow-orbs-genomic-testing');
         expect(html).not.toContain('features-coverflow-underlay-daily-logging');
         expect(html).not.toContain('features-coverflow-orbs-daily-logging');
-        expect(html).not.toContain('features-coverflow-underlay-genomic-testing');
         expect(html).toContain('wellness-analytics-bio-score.webp');
+        expect(html).toContain('genex360-kit.webp');
         expect(html).not.toContain('daily-logging-bio-score.webp');
-        expect(html).toContain('alt="Precision Genomic Testing"');
+        expect(html).not.toContain('alt="Precision Genomic Testing"');
         expect(html).toContain('alt="Daily Logging"');
         expect(html).not.toContain('alt="Wellness Analytics and Bio Optimization Score"');
         expect(html).toContain('rgba(26,39,68,0.34)');
@@ -430,6 +437,11 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(photo.subarray(8, 12).toString('ascii')).toBe('WEBP');
         expect(photo.length).toBeGreaterThan(8_000);
         expect(photo.length).toBeLessThan(120_000);
+        const kit = readFileSync(path.join(root, 'public/images/features/genex360-kit.webp'));
+        expect(kit.subarray(0, 4).toString('ascii')).toBe('RIFF');
+        expect(kit.subarray(8, 12).toString('ascii')).toBe('WEBP');
+        expect(kit.length).toBeGreaterThan(8_000);
+        expect(kit.length).toBeLessThan(120_000);
     });
 
     it('keeps the Wellness Analytics photo behind that card gradient only', () => {
@@ -452,7 +464,11 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(MOBILE).toContain('feature.underlayImageSrc');
         expect(MOBILE).toContain('imageUnderGradient');
         const withPhoto = coverflowFeatureCards.filter((card) => card.underlayImageSrc);
-        expect(withPhoto.map((card) => card.id)).toEqual(['wellness-analytics']);
+        expect(withPhoto.map((card) => card.id)).toEqual(['genomic-testing', 'wellness-analytics']);
+        const genomic = coverflowFeatureCards.find((card) => card.id === 'genomic-testing');
+        expect(genomic?.underlayImageSrc).toBe('/images/features/genex360-kit.webp');
+        expect(genomic?.underlayObjectPosition).toBe('center center');
+        expect(genomic?.headline).toBe('Precision Genomic Testing');
         const daily = coverflowFeatureCards.find((card) => card.id === 'daily-logging');
         expect(daily?.underlayImageSrc).toBeUndefined();
         expect(daily?.placeholderImageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES['daily-logging']);
