@@ -106,7 +106,7 @@ describe('landing Features coverflow data', () => {
                 expect(item.imageSrc).toBe('/images/features/wellness-analytics-bio-score.webp');
                 expect(item.imageAlt).toBe('');
                 expect(item.imageUnderGradient).toBe(true);
-                expect(item.imageObjectPosition).toBe('center 62%');
+                expect(item.imageObjectPosition).toBe('center center');
             } else {
                 expect(item.imageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES[COVERFLOW_FEATURE_IDS[index]]);
                 expect(item.imageAlt).toBe(LOCKED_HEADLINES[index]);
@@ -420,7 +420,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('alt="Precision Genomic Testing"');
         expect(html).toContain('alt="Daily Logging"');
         expect(html).not.toContain('alt="Wellness Analytics and Bio Optimization Score"');
-        expect(html).toContain('rgba(26,39,68,0.72)');
+        expect(html).toContain('rgba(26,39,68,0.34)');
+        expect(html).toContain('background-size:contain');
         const photo = readFileSync(path.join(root, 'public/images/features/wellness-analytics-bio-score.webp'));
         expect(photo.subarray(0, 4).toString('ascii')).toBe('RIFF');
         expect(photo.subarray(8, 12).toString('ascii')).toBe('WEBP');
@@ -430,11 +431,13 @@ describe('CoverFlowCarousel Features integration', () => {
 
     it('keeps the Wellness Analytics photo behind that card gradient only', () => {
         expect(CAROUSEL).toContain('imageUnderGradient');
-        expect(CAROUSEL).toContain('bg-cover bg-no-repeat');
+        expect(CAROUSEL).toContain('bg-contain bg-no-repeat');
+        expect(CAROUSEL).not.toContain('bg-cover');
+        expect(CAROUSEL).toContain("backgroundSize: 'contain'");
         expect(CAROUSEL).toContain('from-[#1A2744] via-[#224852] to-[#111827]');
-        expect(CAROUSEL).toContain('rgba(26,39,68,0.72)');
-        expect(CAROUSEL).toContain('rgba(34,72,82,0.66)');
-        expect(CAROUSEL).toContain('rgba(17,24,39,0.80)');
+        expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
+        expect(CAROUSEL).toContain('rgba(34,72,82,0.28)');
+        expect(CAROUSEL).toContain('rgba(17,24,39,0.42)');
         expect(DESKTOP).toContain('card.underlayImageSrc');
         expect(DESKTOP).toContain('imageUnderGradient');
         expect(MOBILE).toContain('feature.underlayImageSrc');

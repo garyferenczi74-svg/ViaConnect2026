@@ -613,11 +613,17 @@ function CoverFlowCard({
                             <>
                                 <span
                                     aria-hidden="true"
+                                    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
+                                />
+                                <span
+                                    aria-hidden="true"
                                     data-testid={`features-coverflow-underlay-${item.id}`}
-                                    className="pointer-events-none absolute inset-0 bg-cover bg-no-repeat"
+                                    className="pointer-events-none absolute inset-0 bg-contain bg-no-repeat"
                                     style={{
                                         backgroundImage: `url("${item.imageSrc}")`,
                                         backgroundPosition: item.imageObjectPosition ?? 'center center',
+                                        backgroundSize: 'contain',
+                                        backgroundRepeat: 'no-repeat',
                                     }}
                                 />
                                 <span
@@ -625,7 +631,7 @@ function CoverFlowCard({
                                     className="pointer-events-none absolute inset-0"
                                     style={{
                                         backgroundImage:
-                                            'linear-gradient(to bottom right, rgba(26,39,68,0.72) 0%, rgba(34,72,82,0.66) 48%, rgba(17,24,39,0.80) 100%)',
+                                            'linear-gradient(to bottom right, rgba(26,39,68,0.34) 0%, rgba(34,72,82,0.28) 48%, rgba(17,24,39,0.42) 100%)',
                                     }}
                                 />
                             </>

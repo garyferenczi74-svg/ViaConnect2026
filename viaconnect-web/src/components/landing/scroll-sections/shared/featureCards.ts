@@ -81,7 +81,7 @@ export const featureCards: FeatureCard[] = [
         body: "One score across eight dimensions Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals Connect a device when it's available Coming soon stays Coming soon Missing stays UNKNOWN Five tiers from foundational to optimized",
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['wellness-analytics'],
         underlayImageSrc: '/images/features/wellness-analytics-bio-score.webp',
-        underlayObjectPosition: 'center 62%',
+        underlayObjectPosition: 'center center',
     },
     {
         id: 'peptide-protocols',
