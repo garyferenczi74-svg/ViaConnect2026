@@ -87,7 +87,10 @@ jobs:
   # --------------------------------------------------
   formavision-fallback-playwright:
     name: FormaVision Playwright @fallback (2D floor, opt-in)
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04. Playwright 1.59.1 has no Chromium build for
+    # ubuntu26.04-x64, so `playwright install --with-deps chromium` exits
+    # before any test. 24.04 is the newest runner image this Playwright supports.
+    runs-on: ubuntu-24.04
     continue-on-error: true
     defaults:
       run:

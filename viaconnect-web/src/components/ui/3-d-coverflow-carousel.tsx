@@ -27,14 +27,20 @@ import {
     COVERFLOW_AUTOPLAY_MS_PER_CARD,
     COVERFLOW_CARD_SIZE_CLASS,
     COVERFLOW_STAGE_HEIGHT_CLASS,
-    advanceCoverflowProgress,
+    COVERFLOW_STEP_MS,
     coverflowCssTransform,
+    coverflowDisplayedProgress,
+    coverflowHoldMs,
+    coverflowProgressIsSettled,
+    coverflowStepProgress,
     coverflowTransform,
     nearestCoverflowIndex,
     nextClockwiseIndex,
+    releaseCoverflowInteraction,
     shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
     wrapCarouselProgress,
+    type CoverflowInteractionFlags,
 } from '@/components/ui/coverflow-math'
 
 export interface CoverFlowCarouselItem {
@@ -62,7 +68,7 @@ export function CoverFlowCarousel({
         null,
     )
     const reactId = useId()
-    const stageRef = useRef<HTMLDivElement>(null)
+    const rootRef = useRef<HTMLDivElement>(null)
     const dragStartX = useRef<number | null>(null)
     const dragStartY = useRef<number | null>(null)
     const suppressClick = useRef(false)
@@ -70,6 +76,12 @@ export function CoverFlowCarousel({
     const progressRef = useRef(
         items.length === 0 ? 0 : wrapCarouselProgress(initialIndex, items.length),
     )
+    const modeRef = useRef<'hold' | 'step'>('hold')
+    const modeStartRef = useRef(0)
+    const stepFromRef = useRef(progressRef.current)
+    const stepToRef = useRef(progressRef.current)
+    const wasPausedRef = useRef(true)
+    const [motionEpoch, setMotionEpoch] = useState(0)
     const [activeIndex, setActiveIndex] = useState(() =>
         items.length === 0 ? 0 : nearestCoverflowIndex(progressRef.current, items.length),
     )
@@ -77,6 +89,8 @@ export function CoverFlowCarousel({
     const [hovering, setHovering] = useState(false)
     const [focusWithin, setFocusWithin] = useState(false)
     const [pointerActive, setPointerActive] = useState(false)
+    const [inView, setInView] = useState(false)
+    const [tabVisible, setTabVisible] = useState(true)
     const [artFailedIds, setArtFailedIds] = useState<ReadonlySet<string>>(
         () => new Set<string>(),
     )
@@ -90,10 +104,19 @@ export function CoverFlowCarousel({
         focusWithin,
         pointerActive,
         dropdownOpen: openId !== null,
+        inView,
+        tabVisible,
     })
     const autoplayState =
         prefersReducedMotion !== false ? 'off' : autoplayPaused ? 'paused' : 'on'
-    const spinning = autoplayState === 'on'
+    const pausedRef = useRef(autoplayPaused)
+    pausedRef.current = autoplayPaused
+
+    const applyInteraction = useCallback((next: CoverflowInteractionFlags) => {
+        setHovering(next.hovering)
+        setFocusWithin(next.focusWithin)
+        setPointerActive(next.pointerActive)
+    }, [])
 
     useEffect(() => {
         const media = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -103,25 +126,30 @@ export function CoverFlowCarousel({
         return () => media.removeEventListener('change', sync)
     }, [])
 
+    const publish = useCallback((value: number) => {
+        const root = rootRef.current
+        if (!root) return
+        root.dataset.progress = value.toFixed(4)
+        root.dataset.settled = coverflowProgressIsSettled(value) ? 'true' : 'false'
+        root.dataset.phase = modeRef.current
+    }, [])
+
     const paint = useCallback(
-        (value: number, withTransition: boolean) => {
+        (value: number) => {
             const reduced = !!reduceMotion
             for (const [index, item] of items.entries()) {
                 const el = cardEls.current.get(item.id)
                 if (!el) continue
                 const offset = shortestCarouselOffset(index, value, count)
                 const transform = coverflowTransform(offset, reduced)
-                el.style.transition = reduced
-                    ? 'opacity 0.15s ease'
-                    : withTransition
-                      ? 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease'
-                      : 'none'
+                el.style.transition = reduced ? 'opacity 0.15s ease' : 'none'
                 el.style.transform = coverflowCssTransform(transform)
                 el.style.opacity = String(transform.opacity)
                 el.style.zIndex = String(transform.zIndex)
             }
+            publish(value)
         },
-        [count, items, reduceMotion],
+        [count, items, publish, reduceMotion],
     )
 
     const commitIndex = useCallback(
@@ -133,16 +161,40 @@ export function CoverFlowCarousel({
         [count],
     )
 
+    const finishStepNow = useCallback(() => {
+        if (modeRef.current !== 'step' || count === 0) return
+        const value = wrapCarouselProgress(stepToRef.current, count)
+        progressRef.current = value
+        modeRef.current = 'hold'
+        modeStartRef.current = performance.now()
+        paint(value)
+        commitIndex(value)
+    }, [commitIndex, count, paint])
+
     const goTo = useCallback(
         (nextIndex: number) => {
             if (count === 0) return
-            const clamped = wrapCarouselProgress(nextIndex, count)
-            progressRef.current = clamped
-            commitIndex(clamped)
+            const target = wrapCarouselProgress(nextIndex, count)
+            const from = progressRef.current
             setOpenId(null)
-            paint(clamped, !spinning && !reduceMotion)
+            const alreadyThere =
+                coverflowProgressIsSettled(from) &&
+                nearestCoverflowIndex(from, count) === target
+            if (reduceMotion || alreadyThere) {
+                progressRef.current = target
+                modeRef.current = 'hold'
+                modeStartRef.current = performance.now()
+                paint(target)
+                commitIndex(target)
+                return
+            }
+            modeRef.current = 'step'
+            modeStartRef.current = performance.now()
+            stepFromRef.current = from
+            stepToRef.current = target
+            setMotionEpoch((current) => current + 1)
         },
-        [commitIndex, count, paint, reduceMotion, spinning],
+        [commitIndex, count, paint, reduceMotion],
     )
 
     const goPrev = useCallback(
@@ -154,36 +206,165 @@ export function CoverFlowCarousel({
         [count, goTo],
     )
 
+    const resolveDrag = useCallback((x: number, y: number) => {
+        const startX = dragStartX.current
+        const startY = dragStartY.current
+        dragStartX.current = null
+        dragStartY.current = null
+        if (startX === null || startY === null) return
+        const dx = x - startX
+        const dy = y - startY
+        if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return
+        suppressClick.current = true
+        if (dx > 0) goPrev()
+        else goNext()
+    }, [goNext, goPrev])
+
     useEffect(() => {
         if (count === 0) return
         progressRef.current = wrapCarouselProgress(progressRef.current, count)
         commitIndex(progressRef.current)
-        paint(progressRef.current, false)
+        paint(progressRef.current)
     }, [commitIndex, count, paint])
 
     useEffect(() => {
-        if (autoplayPaused || count <= 1) return
+        if (prefersReducedMotion !== false || count <= 1) return
         let frame = 0
-        let lastTs: number | null = null
+        let stopped = false
+        if (modeStartRef.current === 0) modeStartRef.current = performance.now()
         const tick = (ts: number) => {
-            if (lastTs !== null) {
-                const dt = Math.min(ts - lastTs, 64)
-                const next = advanceCoverflowProgress(
-                    progressRef.current,
-                    dt,
-                    COVERFLOW_AUTOPLAY_MS_PER_CARD,
-                    count,
-                )
-                progressRef.current = next
-                paint(next, false)
-                commitIndex(next)
+            if (stopped) return
+            const paused = pausedRef.current
+            if (modeRef.current === 'step') {
+                const amount = coverflowStepProgress(ts - modeStartRef.current, COVERFLOW_STEP_MS)
+                const value =
+                    amount >= 1
+                        ? wrapCarouselProgress(stepToRef.current, count)
+                        : coverflowDisplayedProgress(
+                              stepFromRef.current,
+                              stepToRef.current,
+                              amount,
+                              count,
+                          )
+                progressRef.current = value
+                paint(value)
+                commitIndex(value)
+                if (amount >= 1) {
+                    modeRef.current = 'hold'
+                    modeStartRef.current = ts
+                    publish(value)
+                }
+            } else if (paused) {
+                wasPausedRef.current = true
+            } else {
+                if (wasPausedRef.current) {
+                    wasPausedRef.current = false
+                    modeStartRef.current = ts
+                } else if (ts - modeStartRef.current >= coverflowHoldMs(COVERFLOW_AUTOPLAY_MS_PER_CARD, COVERFLOW_STEP_MS)) {
+                    const from = wrapCarouselProgress(progressRef.current, count)
+                    modeRef.current = 'step'
+                    modeStartRef.current = ts
+                    stepFromRef.current = from
+                    stepToRef.current = nextClockwiseIndex(
+                        nearestCoverflowIndex(from, count),
+                        count,
+                    )
+                }
             }
-            lastTs = ts
             frame = window.requestAnimationFrame(tick)
         }
         frame = window.requestAnimationFrame(tick)
-        return () => window.cancelAnimationFrame(frame)
-    }, [autoplayPaused, commitIndex, count, paint])
+        return () => {
+            stopped = true
+            window.cancelAnimationFrame(frame)
+        }
+    }, [commitIndex, count, motionEpoch, paint, prefersReducedMotion, publish])
+
+    useEffect(() => {
+        const node = rootRef.current
+        if (!node || typeof IntersectionObserver === 'undefined') {
+            setInView(true)
+            return
+        }
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0]
+                const visible = Boolean(
+                    entry && entry.isIntersecting && entry.intersectionRatio >= 0.2,
+                )
+                if (!visible) {
+                    finishStepNow()
+                    const released = releaseCoverflowInteraction(
+                        {
+                            hovering: true,
+                            focusWithin: false,
+                            pointerActive: true,
+                        },
+                        'left-viewport',
+                    )
+                    setHovering(released.hovering)
+                    setPointerActive(released.pointerActive)
+                } else {
+                    setHovering(node.matches(':hover'))
+                }
+                setInView(visible)
+            },
+            { threshold: [0, 0.2, 0.5] },
+        )
+        observer.observe(node)
+        return () => observer.disconnect()
+    }, [finishStepNow])
+
+    useEffect(() => {
+        const onVisibility = () => {
+            const visible = document.visibilityState !== 'hidden'
+            if (!visible) {
+                finishStepNow()
+                const released = releaseCoverflowInteraction(
+                    {
+                        hovering,
+                        focusWithin,
+                        pointerActive,
+                    },
+                    'visibility-hidden',
+                )
+                applyInteraction(released)
+                wasPausedRef.current = true
+            } else if (rootRef.current) {
+                setHovering(rootRef.current.matches(':hover'))
+                setPointerActive(false)
+                setMotionEpoch((current) => current + 1)
+            }
+            setTabVisible(visible)
+        }
+        document.addEventListener('visibilitychange', onVisibility)
+        return () => document.removeEventListener('visibilitychange', onVisibility)
+    }, [applyInteraction, finishStepNow, focusWithin, hovering, pointerActive])
+
+    useEffect(() => {
+        const releasePointer = (event: PointerEvent) => {
+            resolveDrag(event.clientX, event.clientY)
+            setPointerActive((current) => {
+                if (!current) return current
+                return releaseCoverflowInteraction(
+                    { hovering, focusWithin, pointerActive: current },
+                    'pointer-up',
+                ).pointerActive
+            })
+        }
+        const onBlur = () => {
+            setPointerActive(false)
+            wasPausedRef.current = true
+        }
+        window.addEventListener('pointerup', releasePointer)
+        window.addEventListener('pointercancel', releasePointer)
+        window.addEventListener('blur', onBlur)
+        return () => {
+            window.removeEventListener('pointerup', releasePointer)
+            window.removeEventListener('pointercancel', releasePointer)
+            window.removeEventListener('blur', onBlur)
+        }
+    }, [focusWithin, hovering, resolveDrag])
 
     const onStageKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === 'ArrowLeft') {
@@ -208,28 +389,8 @@ export function CoverFlowCarousel({
         dragStartY.current = event.clientY
     }
 
-    const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (dragStartX.current === null || dragStartY.current === null) return
-        const dx = event.clientX - dragStartX.current
-        const dy = event.clientY - dragStartY.current
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
-        if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.setPointerCapture(event.pointerId)
-        }
-    }
-
     const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-        const startX = dragStartX.current
-        const startY = dragStartY.current
-        dragStartX.current = null
-        dragStartY.current = null
-        if (startX === null || startY === null) return
-        const dx = event.clientX - startX
-        const dy = event.clientY - startY
-        if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return
-        suppressClick.current = true
-        if (dx > 0) goPrev()
-        else goNext()
+        resolveDrag(event.clientX, event.clientY)
     }
 
     const indexAtClientPoint = (x: number, y: number) => {
@@ -263,14 +424,24 @@ export function CoverFlowCarousel({
         goTo(index)
     }
 
+    const markKeyboardFocus = (target: EventTarget | null) => {
+        if (!(target instanceof Element)) return
+        const sync = () => {
+            if (target.isConnected && target.matches(':focus-visible')) setFocusWithin(true)
+        }
+        sync()
+        window.requestAnimationFrame(sync)
+    }
+
     if (count === 0) return null
 
     return (
         <div
+            ref={rootRef}
             className={cn('relative w-full bg-transparent', className)}
             data-testid="features-coverflow"
             data-autoplay={autoplayState}
-            data-motion={spinning ? 'continuous' : autoplayState}
+            data-motion={autoplayState === 'on' ? 'hold' : autoplayState}
             data-motion-pref={
                 prefersReducedMotion === null
                     ? 'unknown'
@@ -282,10 +453,14 @@ export function CoverFlowCarousel({
                 if (event.pointerType === 'mouse') setHovering(true)
             }}
             onPointerLeave={() => {
+                const released = releaseCoverflowInteraction(
+                    { hovering: true, focusWithin, pointerActive },
+                    'pointer-up',
+                )
                 setHovering(false)
-                setPointerActive(false)
+                setPointerActive(released.pointerActive)
             }}
-            onFocusCapture={() => setFocusWithin(true)}
+            onFocusCapture={(event) => markKeyboardFocus(event.target)}
             onBlurCapture={(event) => {
                 const next = event.relatedTarget
                 if (next instanceof Node && event.currentTarget.contains(next)) return
@@ -296,21 +471,22 @@ export function CoverFlowCarousel({
             onPointerCancel={() => setPointerActive(false)}
         >
             <div
-                ref={stageRef}
                 role="region"
                 aria-roledescription="carousel"
                 aria-label="ViaConnect features"
                 tabIndex={0}
                 onKeyDown={onStageKeyDown}
                 onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onClick={onStageClick}
                 className={cn(
                     'relative w-full overflow-visible bg-transparent outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2DA5A0]',
                     COVERFLOW_STAGE_HEIGHT_CLASS,
                 )}
-                style={{ perspective: reduceMotion ? undefined : '1200px' }}
+                style={{
+                    perspective: reduceMotion ? undefined : '1200px',
+                    touchAction: 'pan-y',
+                }}
             >
                 <div
                     className="absolute inset-0 bg-transparent"
@@ -327,7 +503,6 @@ export function CoverFlowCarousel({
                                 isActive={isActive}
                                 transform={transform}
                                 reduceMotion={!!reduceMotion}
-                                spinning={spinning}
                                 artFailed={artFailedIds.has(item.id)}
                                 onArtError={() =>
                                     setArtFailedIds((current) => {
@@ -368,7 +543,6 @@ function CoverFlowCard({
     isActive,
     transform,
     reduceMotion,
-    spinning,
     artFailed,
     onArtError,
     registerEl,
@@ -382,7 +556,6 @@ function CoverFlowCard({
     isActive: boolean
     transform: ReturnType<typeof coverflowTransform>
     reduceMotion: boolean
-    spinning: boolean
     artFailed: boolean
     onArtError: () => void
     registerEl: (el: HTMLElement | null) => void
@@ -402,7 +575,7 @@ function CoverFlowCard({
             data-testid={`features-coverflow-card-${item.id}`}
             data-active={isActive ? 'true' : 'false'}
             className={cn(
-                'absolute left-1/2 top-1/2 origin-center will-change-transform',
+                'absolute left-1/2 top-1/2 origin-center',
                 COVERFLOW_CARD_SIZE_CLASS,
                 hidden ? 'pointer-events-none' : 'pointer-events-auto',
             )}
@@ -410,11 +583,7 @@ function CoverFlowCard({
                 transform: cssTransform,
                 opacity: transform.opacity,
                 zIndex: transform.zIndex,
-                transition: reduceMotion
-                    ? 'opacity 0.15s ease'
-                    : spinning
-                      ? 'none'
-                      : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+                transition: reduceMotion ? 'opacity 0.15s ease' : 'none',
             }}
         >
             <div
@@ -432,6 +601,8 @@ function CoverFlowCard({
                         onClick={() => {
                             if (!isActive) onActivate()
                         }}
+                        draggable={false}
+                        onDragStart={(event) => event.preventDefault()}
                         className="absolute inset-0 block overflow-hidden text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2DA5A0]"
                         aria-label={isActive ? item.title : `Show ${item.title}`}
                     >
@@ -443,8 +614,10 @@ function CoverFlowCard({
                             <img
                                 src={item.imageSrc}
                                 alt={item.imageAlt}
+                                draggable={false}
                                 className="absolute inset-0 h-full w-full object-cover"
                                 onError={onArtError}
+                                onDragStart={(event) => event.preventDefault()}
                             />
                         )}
                     </button>
