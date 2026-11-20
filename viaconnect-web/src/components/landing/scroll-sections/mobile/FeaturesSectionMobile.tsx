@@ -42,6 +42,10 @@ export function FeaturesSectionMobile() {
                         imageAlt: feature.underlayImageSrc ? '' : feature.headline,
                         imageUnderGradient: Boolean(feature.underlayImageSrc),
                         imageObjectPosition: feature.underlayObjectPosition,
+                        videoMp4Src: feature.videoMp4Src,
+                        videoWebmSrc: feature.videoWebmSrc,
+                        videoPosterSrc: feature.videoPosterSrc,
+                        videoObjectPosition: feature.videoObjectPosition,
                     }))}
                 />
             </div>

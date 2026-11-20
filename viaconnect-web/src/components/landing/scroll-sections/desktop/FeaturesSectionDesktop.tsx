@@ -54,6 +54,10 @@ export function FeaturesSectionDesktop() {
                         imageAlt: card.underlayImageSrc ? '' : card.headline,
                         imageUnderGradient: Boolean(card.underlayImageSrc),
                         imageObjectPosition: card.underlayObjectPosition,
+                        videoMp4Src: card.videoMp4Src,
+                        videoWebmSrc: card.videoWebmSrc,
+                        videoPosterSrc: card.videoPosterSrc,
+                        videoObjectPosition: card.videoObjectPosition,
                     }))}
                 />
             </div>

@@ -22,6 +22,11 @@ export interface FeatureCard {
     /** Decorative photo drawn under the card gradient. Landing coverflow only. */
     underlayImageSrc?: string
     underlayObjectPosition?: string
+    /** Looping decorative clip for the landing coverflow. No audio. */
+    videoMp4Src?: string
+    videoWebmSrc?: string
+    videoPosterSrc?: string
+    videoObjectPosition?: string
 }
 
 export const COVERFLOW_FEATURE_IDS = [
@@ -90,6 +95,10 @@ export const featureCards: FeatureCard[] = [
         teaser: 'Personalized peptides across four delivery forms',
         body: 'Peptide therapy, finally personalized Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system',
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['peptide-protocols'],
+        videoMp4Src: '/videos/features/peptide-education.mp4',
+        videoWebmSrc: '/videos/features/peptide-education.webm',
+        videoPosterSrc: '/images/features/peptide-education-poster.webp',
+        videoObjectPosition: 'center 45%',
     },
     {
         id: 'three-portal',
@@ -135,5 +144,9 @@ export function toCoverFlowFeatureItem(card: FeatureCard) {
         imageAlt: underlay ? '' : card.headline,
         imageUnderGradient: Boolean(underlay),
         imageObjectPosition: card.underlayObjectPosition,
+        videoMp4Src: card.videoMp4Src,
+        videoWebmSrc: card.videoWebmSrc,
+        videoPosterSrc: card.videoPosterSrc,
+        videoObjectPosition: card.videoObjectPosition,
     }
 }
