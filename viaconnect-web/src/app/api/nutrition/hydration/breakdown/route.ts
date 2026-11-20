@@ -22,7 +22,6 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
 import {
@@ -49,16 +48,16 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayStartIso = todayStart.toISOString();
 
-  // Read today's hydration events. Filtered to rows with a non null
-  // hydration_source_kind so non hydration meal_items do not leak into
-  // the breakdown.
-  const { data: eventRows, error: eventsErr } = await admin
+  // Session client, not the service-role client. createAdminClient throws
+  // "NEXT_PUBLIC_SUPABASE_URL not configured" on production, which is the
+  // "Could not load breakdown" error. The signed-in user can already
+  // select their own meal_items and meals, and any authenticated user can
+  // select beverage_catalog.
+  const { data: eventRows, error: eventsErr } = await supabase
     .from('meal_items')
     .select('meal_id, hydration_source_kind, beverage_catalog_slug, portion_volume_ml, meals!inner(user_id, logged_at)')
     .eq('meals.user_id', user.id)
@@ -73,7 +72,7 @@ export async function GET(): Promise<NextResponse> {
   // Read the active catalog for the slug + kind join. Same query the
   // catalog endpoint uses; we cannot share the response because the route
   // here needs an in process row set, not a JSON body.
-  const { data: catalogRows, error: catalogErr } = await admin
+  const { data: catalogRows, error: catalogErr } = await supabase
     .from('beverage_catalog')
     .select('slug, category, hydration_source_kind, hydration_coefficient')
     .eq('is_active', true)

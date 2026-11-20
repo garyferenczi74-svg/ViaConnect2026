@@ -15,20 +15,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mocks = vi.hoisted(() => {
   return {
     supabaseAuth: vi.fn(),
-    adminFrom: vi.fn(),
+    sessionFrom: vi.fn(),
   };
 });
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
     auth: { getUser: mocks.supabaseAuth },
+    from: mocks.sessionFrom,
   }),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    from: mocks.adminFrom,
-  }),
+  createAdminClient: () => {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
+  },
 }));
 
 vi.mock('@/lib/utils/safe-log', () => ({
@@ -58,7 +59,7 @@ function mockCatalogQuery(rows: unknown[], error: { message: string } | null = n
 
 beforeEach(() => {
   mocks.supabaseAuth.mockReset();
-  mocks.adminFrom.mockReset();
+  mocks.sessionFrom.mockReset();
 });
 
 afterEach(() => {
@@ -74,7 +75,7 @@ describe('GET /api/nutrition/hydration/breakdown: kill switch', () => {
     const body = await res.json();
     expect(body).toEqual({ error: 'beverage catalog disabled' });
     expect(mocks.supabaseAuth).not.toHaveBeenCalled();
-    expect(mocks.adminFrom).not.toHaveBeenCalled();
+    expect(mocks.sessionFrom).not.toHaveBeenCalled();
   });
 });
 
@@ -98,7 +99,7 @@ describe('GET /api/nutrition/hydration/breakdown: success', () => {
       { slug: 'water_still', category: 'water', hydration_source_kind: 'pure_water', hydration_coefficient: 1.0 },
       { slug: 'coffee_drip', category: 'coffee', hydration_source_kind: 'coffee_tea', hydration_coefficient: 1.0 },
     ]);
-    mocks.adminFrom
+    mocks.sessionFrom
       .mockReturnValueOnce({ select: eventsMock.select })
       .mockReturnValueOnce({ select: catalogMock.select });
 
@@ -120,7 +121,7 @@ describe('GET /api/nutrition/hydration/breakdown: success', () => {
 
     const eventsMock = mockEventsQuery([]);
     const catalogMock = mockCatalogQuery([]);
-    mocks.adminFrom
+    mocks.sessionFrom
       .mockReturnValueOnce({ select: eventsMock.select })
       .mockReturnValueOnce({ select: catalogMock.select });
 
@@ -136,7 +137,7 @@ describe('GET /api/nutrition/hydration/breakdown: failure', () => {
   it('returns 500 when events query fails', async () => {
     mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-3' } } });
     const eventsMock = mockEventsQuery([], { message: 'rls denied' });
-    mocks.adminFrom.mockReturnValueOnce({ select: eventsMock.select });
+    mocks.sessionFrom.mockReturnValueOnce({ select: eventsMock.select });
 
     const res = await GET();
     expect(res.status).toBe(500);
@@ -146,11 +147,31 @@ describe('GET /api/nutrition/hydration/breakdown: failure', () => {
     mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-4' } } });
     const eventsMock = mockEventsQuery([]);
     const catalogMock = mockCatalogQuery([], { message: 'rls denied' });
-    mocks.adminFrom
+    mocks.sessionFrom
       .mockReturnValueOnce({ select: eventsMock.select })
       .mockReturnValueOnce({ select: catalogMock.select });
 
     const res = await GET();
     expect(res.status).toBe(500);
+  });
+
+  it('still aggregates when createAdminClient cannot be constructed', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-5' } } });
+    const eventsMock = mockEventsQuery([
+      { meal_id: 'm1', hydration_source_kind: 'pure_water', beverage_catalog_slug: 'water_still', portion_volume_ml: 250 },
+    ]);
+    const catalogMock = mockCatalogQuery([
+      { slug: 'water_still', category: 'water', hydration_source_kind: 'pure_water', hydration_coefficient: 1.0 },
+    ]);
+    mocks.sessionFrom
+      .mockReturnValueOnce({ select: eventsMock.select })
+      .mockReturnValueOnce({ select: catalogMock.select });
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.total_gross_ml).toBe(250);
+    expect(mocks.sessionFrom).toHaveBeenNthCalledWith(1, 'meal_items');
+    expect(mocks.sessionFrom).toHaveBeenNthCalledWith(2, 'beverage_catalog');
   });
 });
