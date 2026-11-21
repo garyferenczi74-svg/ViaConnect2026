@@ -122,7 +122,7 @@ export const featureCards: FeatureCard[] = [
         videoWebmSrc: '/videos/features/biology-tracking.webm',
         videoPosterSrc: '/images/features/biology-tracking-poster.webp',
         videoObjectPosition: 'center center',
-        videoObjectFit: 'contain',
+        videoObjectFit: 'cover',
     },
     {
         id: 'interaction-engine',
