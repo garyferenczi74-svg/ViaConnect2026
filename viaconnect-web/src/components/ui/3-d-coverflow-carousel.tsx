@@ -57,6 +57,12 @@ export interface CoverFlowCarouselItem {
     videoWebmSrc?: string
     videoPosterSrc?: string
     videoObjectPosition?: string
+    /**
+     * Below 640px the card is wider than this portrait clip, so cover would
+     * crop the phone. The frame is 132% of the media height and centered,
+     * which keeps the phone and trims only the kitchen.
+     */
+    videoPhoneFrame?: boolean
 }
 
 export interface CoverFlowCarouselProps {
@@ -478,6 +484,21 @@ export function CoverFlowCarousel({
             onPointerUp={() => setPointerActive(false)}
             onPointerCancel={() => setPointerActive(false)}
         >
+            <style>{`
+              @media (max-width: 639px) {
+                .features-phone-frame {
+                  inset: auto !important;
+                  top: 50% !important;
+                  left: 50% !important;
+                  width: auto !important;
+                  height: 132% !important;
+                  max-width: none !important;
+                  aspect-ratio: 784 / 1168;
+                  transform: translate(-50%, -50%);
+                  object-fit: cover;
+                }
+              }
+            `}</style>
             <div
                 role="region"
                 aria-roledescription="carousel"
@@ -648,7 +669,10 @@ function CoverFlowCard({
                                         aria-hidden="true"
                                         draggable={false}
                                         data-testid={`features-coverflow-poster-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                        className={cn(
+                                            'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover',
+                                            item.videoPhoneFrame && 'features-phone-frame',
+                                        )}
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
                                         onDragStart={(event) => event.preventDefault()}
                                     />
@@ -666,7 +690,10 @@ function CoverFlowCard({
                                         tabIndex={-1}
                                         draggable={false}
                                         data-testid={`features-coverflow-video-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                        className={cn(
+                                            'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover',
+                                            item.videoPhoneFrame && 'features-phone-frame',
+                                        )}
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
                                         onDragStart={(event) => event.preventDefault()}
                                     >
