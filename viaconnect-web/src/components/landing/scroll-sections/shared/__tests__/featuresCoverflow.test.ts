@@ -52,7 +52,7 @@ const LOCKED_HEADLINES = [
     'Daily Logging',
     'Wellness Analytics and Bio Optimization Score',
     'Peptide Education',
-    THREE_PORTAL_COPY.headline,
+    'Biology Tracking',
     'Medical and Herbal Interaction Engine',
     'Helix Rewards',
 ] as const;
@@ -89,7 +89,8 @@ describe('landing Features coverflow data', () => {
 
     it('keeps waitlist-honest Three-Portal copy on the carousel', () => {
         const threePortal = coverflowFeatureCards.find((card) => card.id === 'three-portal');
-        expect(threePortal?.headline).toBe(THREE_PORTAL_COPY.headline);
+        expect(threePortal?.headline).toBe('Biology Tracking');
+        expect(threePortal?.headline).not.toBe(THREE_PORTAL_COPY.headline);
         expect(threePortal?.teaser).toBe(THREE_PORTAL_COPY.teaser);
         expect(threePortal?.body).toBe(THREE_PORTAL_COPY.body);
         expect(threePortal?.body).toMatch(/Q1 2027/);

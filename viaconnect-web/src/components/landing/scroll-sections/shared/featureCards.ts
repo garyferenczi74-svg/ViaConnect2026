@@ -112,7 +112,7 @@ export const featureCards: FeatureCard[] = [
     {
         id: 'three-portal',
         icon: Users,
-        headline: THREE_PORTAL_COPY.headline,
+        headline: 'Biology Tracking',
         teaser: THREE_PORTAL_COPY.teaser,
         body: THREE_PORTAL_COPY.body,
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['three-portal'],
