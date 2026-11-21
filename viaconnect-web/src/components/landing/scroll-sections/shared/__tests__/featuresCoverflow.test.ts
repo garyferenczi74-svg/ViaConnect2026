@@ -112,6 +112,13 @@ describe('landing Features coverflow data', () => {
                 expect(item.imageAlt).toBe('');
                 expect(item.imageUnderGradient).toBe(true);
                 expect(item.imageObjectPosition).toBe('center center');
+            } else if (item.id === 'daily-logging') {
+                expect(item.imageUnderGradient).toBe(false);
+                expect(item.videoMp4Src).toBe('/videos/features/daily-logging.mp4');
+                expect(item.videoWebmSrc).toBe('/videos/features/daily-logging.webm');
+                expect(item.videoPosterSrc).toBe('/images/features/daily-logging-poster.webp');
+                expect(item.videoObjectPosition).toBe('center center');
+                expect(item.videoFit).toBe('contain');
             } else {
                 expect(item.imageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES[COVERFLOW_FEATURE_IDS[index]]);
                 expect(item.imageAlt).toBe(LOCKED_HEADLINES[index]);
@@ -423,12 +430,13 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('features-coverflow-underlay-genomic-testing');
         expect(html).toContain('features-coverflow-orbs-genomic-testing');
         expect(html).not.toContain('features-coverflow-underlay-daily-logging');
-        expect(html).not.toContain('features-coverflow-orbs-daily-logging');
+        expect(html).toContain('features-coverflow-orbs-daily-logging');
+        expect(html).toContain('features-coverflow-video-daily-logging');
         expect(html).toContain('wellness-analytics-bio-score.webp');
         expect(html).toContain('genex360-kit.webp');
         expect(html).not.toContain('daily-logging-bio-score.webp');
         expect(html).not.toContain('alt="Precision Genomic Testing"');
-        expect(html).toContain('alt="Daily Logging"');
+        expect(html).not.toContain('alt="Daily Logging"');
         expect(html).not.toContain('alt="Wellness Analytics and Bio Optimization Score"');
         expect(html).toContain('rgba(26,39,68,0.34)');
         expect(html).toContain('background-size:cover');
@@ -448,7 +456,11 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('imageUnderGradient');
         expect(CAROUSEL).toContain('bg-cover bg-no-repeat');
         expect(CAROUSEL).not.toContain('features-coverflow-fill-');
-        expect(CAROUSEL).not.toContain('blur(28px)');
+        const photoBranch = CAROUSEL.slice(
+            CAROUSEL.indexOf(') : item.imageUnderGradient ? ('),
+            CAROUSEL.indexOf('{artFailed ? null : ('),
+        );
+        expect(photoBranch).not.toContain('blur(');
         expect(CAROUSEL).toContain("backgroundSize: 'cover'");
         expect(CAROUSEL).toContain('from-[#1A2744] via-[#224852] to-[#111827]');
         expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
@@ -481,9 +493,10 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(peptide?.videoWebmSrc).toBe('/videos/features/peptide-education.webm');
         expect(peptide?.videoPosterSrc).toBe('/images/features/peptide-education-poster.webp');
         expect(peptide?.videoObjectPosition).toBe('center 45%');
+        expect(peptide?.videoFit).toBeUndefined();
         expect(peptide?.body.toLowerCase()).not.toMatch(/semaglutide|retatrutide/);
         const withVideo = coverflowFeatureCards.filter((card) => card.videoMp4Src);
-        expect(withVideo.map((card) => card.id)).toEqual(['peptide-protocols']);
+        expect(withVideo.map((card) => card.id)).toEqual(['daily-logging', 'peptide-protocols']);
 
         const mp4 = readFileSync(path.join(root, 'public/videos/features/peptide-education.mp4'));
         const webm = readFileSync(path.join(root, 'public/videos/features/peptide-education.webm'));
@@ -522,9 +535,67 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('peptide-education.webm');
         expect(html).toContain('playsInline');
         expect(html).toContain('preload="metadata"');
-        const videoTag = html.match(/<video\b[^>]*>/)?.[0] ?? '';
-        expect(videoTag).not.toMatch(/\scontrols[\s=]/);
-        expect(html).not.toContain('features-coverflow-video-daily-logging');
+        const videoTags = html.match(/<video\b[^>]*>/g) ?? [];
+        expect(videoTags).toHaveLength(3);
+        for (const videoTag of videoTags) {
+            expect(videoTag).not.toMatch(/\scontrols[\s=]/);
+        }
+        expect(html).toContain('features-coverflow-video-daily-logging');
+        expect(html).toContain('features-coverflow-orbs-daily-logging');
+        expect(html.indexOf('features-coverflow-orbs-daily-logging')).toBeGreaterThan(
+            html.indexOf('features-coverflow-video-daily-logging'),
+        );
+        expect(html).toContain('daily-logging.mp4');
+        expect(html).toContain('daily-logging.webm');
+        expect(html).toContain('daily-logging-poster.webp');
         expect(html).not.toContain('features-coverflow-video-wellness-analytics');
+        expect(html).not.toContain('features-coverflow-video-genomic-testing');
+    });
+
+    it('loops a muted Daily Logging clip and keeps the phone centered', () => {
+        const daily = coverflowFeatureCards.find((card) => card.id === 'daily-logging');
+        expect(daily?.headline).toBe('Daily Logging');
+        expect(daily?.videoMp4Src).toBe('/videos/features/daily-logging.mp4');
+        expect(daily?.videoWebmSrc).toBe('/videos/features/daily-logging.webm');
+        expect(daily?.videoPosterSrc).toBe('/images/features/daily-logging-poster.webp');
+        expect(daily?.videoObjectPosition).toBe('center center');
+        expect(daily?.videoFit).toBe('contain');
+        expect(daily?.underlayImageSrc).toBeUndefined();
+
+        const mp4 = readFileSync(path.join(root, 'public/videos/features/daily-logging.mp4'));
+        const webm = readFileSync(path.join(root, 'public/videos/features/daily-logging.webm'));
+        const poster = readFileSync(path.join(root, 'public/images/features/daily-logging-poster.webp'));
+        expect(mp4.subarray(4, 8).toString('ascii')).toBe('ftyp');
+        expect([...webm.subarray(0, 4)]).toEqual([0x1a, 0x45, 0xdf, 0xa3]);
+        expect(poster.subarray(0, 4).toString('ascii')).toBe('RIFF');
+        expect(poster.subarray(8, 12).toString('ascii')).toBe('WEBP');
+        for (const bytes of [mp4, webm, poster]) {
+            expect(bytes.length).toBeGreaterThan(8_000);
+            expect(bytes.length).toBeLessThan(3_000_000);
+        }
+        expect(CAROUSEL).toContain('reduceMotion ?');
+        expect(CAROUSEL).toContain('features-coverflow-poster-${item.id}');
+        expect(CAROUSEL).toContain('prefersReducedMotion === false');
+        expect(CAROUSEL).toContain("item.videoFit === 'contain'");
+        expect(CAROUSEL).toContain('object-contain');
+        expect(CAROUSEL).toContain('blur(28px) brightness(0.82)');
+        expect(CAROUSEL).toContain('features-coverflow-video-fill-${item.id}');
+        expect(DESKTOP).toContain('card.videoFit');
+        expect(MOBILE).toContain('feature.videoFit');
+
+        const html = renderToStaticMarkup(
+            createElement(CoverFlowCarousel, {
+                items: coverflowFeatureCards.map(toCoverFlowFeatureItem),
+            }),
+        );
+        const dailyVideo = html.match(/data-testid="features-coverflow-video-daily-logging"[^>]*>/)?.[0] ?? '';
+        expect(dailyVideo).toContain('object-contain');
+        expect(dailyVideo).not.toContain('object-cover');
+        expect(html).toContain('features-coverflow-video-fill-daily-logging');
+        expect(html).toContain('blur(28px) brightness(0.82)');
+        expect(html).not.toContain('features-coverflow-video-fill-peptide-protocols');
+        const peptideVideo = html.match(/data-testid="features-coverflow-video-peptide-protocols"[^>]*>/)?.[0] ?? '';
+        expect(peptideVideo).toContain('object-cover');
+        expect(peptideVideo).toContain('object-position:center 45%');
     });
 });

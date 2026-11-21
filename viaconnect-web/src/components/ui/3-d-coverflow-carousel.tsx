@@ -57,6 +57,8 @@ export interface CoverFlowCarouselItem {
     videoWebmSrc?: string
     videoPosterSrc?: string
     videoObjectPosition?: string
+    /** cover crops the frame. contain keeps every pixel, with a blurred fill behind. */
+    videoFit?: 'cover' | 'contain'
 }
 
 export interface CoverFlowCarouselProps {
@@ -582,17 +584,22 @@ function CoverFlowCard({
     bodyId: string
 }) {
     const videoRef = useRef<HTMLVideoElement>(null)
+    const fillRef = useRef<HTMLVideoElement>(null)
 
     useEffect(() => {
-        const node = videoRef.current
-        if (!node || !item.videoMp4Src) return
+        const nodes = [videoRef.current, fillRef.current].filter(
+            (node): node is HTMLVideoElement => node !== null,
+        )
+        if (nodes.length === 0 || !item.videoMp4Src) return
         if (playVideo) {
-            node.muted = true
-            const pending = node.play()
-            if (pending) void pending.catch(() => {})
+            for (const node of nodes) {
+                node.muted = true
+                const pending = node.play()
+                if (pending) void pending.catch(() => {})
+            }
             return
         }
-        node.pause()
+        for (const node of nodes) node.pause()
     }, [item.videoMp4Src, playVideo])
     const cssTransform = coverflowCssTransform(transform)
     const hidden = transform.opacity === 0
@@ -641,6 +648,49 @@ function CoverFlowCard({
                                     aria-hidden="true"
                                     className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
                                 />
+                                {item.videoFit === 'contain' ? (
+                                    reduceMotion ? (
+                                        <img
+                                            src={item.videoPosterSrc}
+                                            alt=""
+                                            aria-hidden="true"
+                                            draggable={false}
+                                            data-testid={`features-coverflow-video-fill-${item.id}`}
+                                            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                            style={{
+                                                transform: 'scale(1.18)',
+                                                filter: 'blur(28px) brightness(0.82)',
+                                            }}
+                                            onDragStart={(event) => event.preventDefault()}
+                                        />
+                                    ) : (
+                                        <video
+                                            ref={fillRef}
+                                            aria-hidden="true"
+                                            muted
+                                            loop
+                                            playsInline
+                                            autoPlay={playVideo}
+                                            preload="metadata"
+                                            poster={item.videoPosterSrc}
+                                            controls={false}
+                                            tabIndex={-1}
+                                            draggable={false}
+                                            data-testid={`features-coverflow-video-fill-${item.id}`}
+                                            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                            style={{
+                                                transform: 'scale(1.18)',
+                                                filter: 'blur(28px) brightness(0.82)',
+                                            }}
+                                            onDragStart={(event) => event.preventDefault()}
+                                        >
+                                            {item.videoWebmSrc ? (
+                                                <source src={item.videoWebmSrc} type="video/webm" />
+                                            ) : null}
+                                            <source src={item.videoMp4Src} type="video/mp4" />
+                                        </video>
+                                    )
+                                ) : null}
                                 {reduceMotion ? (
                                     <img
                                         src={item.videoPosterSrc}
@@ -648,7 +698,11 @@ function CoverFlowCard({
                                         aria-hidden="true"
                                         draggable={false}
                                         data-testid={`features-coverflow-poster-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                        className={
+                                            item.videoFit === 'contain'
+                                                ? 'pointer-events-none absolute inset-0 z-[1] h-full w-full object-contain'
+                                                : 'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover'
+                                        }
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
                                         onDragStart={(event) => event.preventDefault()}
                                     />
@@ -666,8 +720,18 @@ function CoverFlowCard({
                                         tabIndex={-1}
                                         draggable={false}
                                         data-testid={`features-coverflow-video-${item.id}`}
-                                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                                        className={
+                                            item.videoFit === 'contain'
+                                                ? 'pointer-events-none absolute inset-0 z-[1] h-full w-full object-contain'
+                                                : 'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover'
+                                        }
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
+                                        onTimeUpdate={(event) => {
+                                            const fill = fillRef.current
+                                            if (!fill) return
+                                            const drift = Math.abs(fill.currentTime - event.currentTarget.currentTime)
+                                            if (drift > 0.25) fill.currentTime = event.currentTarget.currentTime
+                                        }}
                                         onDragStart={(event) => event.preventDefault()}
                                     >
                                         {item.videoWebmSrc ? (
