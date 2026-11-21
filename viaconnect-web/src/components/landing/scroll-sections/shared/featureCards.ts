@@ -27,6 +27,8 @@ export interface FeatureCard {
     videoWebmSrc?: string
     videoPosterSrc?: string
     videoObjectPosition?: string
+    /** cover crops the frame. contain keeps every pixel on the dark card fill. */
+    videoObjectFit?: 'cover' | 'contain'
     /** Portrait clip: below 640px, shrink the cover so the phone stays whole. */
     videoPhoneFrame?: boolean
 }
@@ -116,6 +118,11 @@ export const featureCards: FeatureCard[] = [
         teaser: THREE_PORTAL_COPY.teaser,
         body: THREE_PORTAL_COPY.body,
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['three-portal'],
+        videoMp4Src: '/videos/features/biology-tracking.mp4',
+        videoWebmSrc: '/videos/features/biology-tracking.webm',
+        videoPosterSrc: '/images/features/biology-tracking-poster.webp',
+        videoObjectPosition: 'center center',
+        videoObjectFit: 'contain',
     },
     {
         id: 'interaction-engine',
@@ -157,6 +164,7 @@ export function toCoverFlowFeatureItem(card: FeatureCard) {
         videoWebmSrc: card.videoWebmSrc,
         videoPosterSrc: card.videoPosterSrc,
         videoObjectPosition: card.videoObjectPosition,
+        videoObjectFit: card.videoObjectFit,
         videoPhoneFrame: card.videoPhoneFrame,
     }
 }

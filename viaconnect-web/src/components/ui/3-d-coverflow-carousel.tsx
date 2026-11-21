@@ -57,6 +57,8 @@ export interface CoverFlowCarouselItem {
     videoWebmSrc?: string
     videoPosterSrc?: string
     videoObjectPosition?: string
+    /** cover crops the frame. contain keeps every pixel on the dark card fill. */
+    videoObjectFit?: 'cover' | 'contain'
     /**
      * Below 640px the card is wider than this portrait clip, so cover would
      * crop the phone. The frame is 132% of the media height and centered,
@@ -670,7 +672,8 @@ function CoverFlowCard({
                                         draggable={false}
                                         data-testid={`features-coverflow-poster-${item.id}`}
                                         className={cn(
-                                            'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover',
+                                            'pointer-events-none absolute inset-0 z-0 h-full w-full',
+                                            item.videoObjectFit === 'contain' ? 'object-contain' : 'object-cover',
                                             item.videoPhoneFrame && 'features-phone-frame',
                                         )}
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
@@ -691,7 +694,8 @@ function CoverFlowCard({
                                         draggable={false}
                                         data-testid={`features-coverflow-video-${item.id}`}
                                         className={cn(
-                                            'pointer-events-none absolute inset-0 z-0 h-full w-full object-cover',
+                                            'pointer-events-none absolute inset-0 z-0 h-full w-full',
+                                            item.videoObjectFit === 'contain' ? 'object-contain' : 'object-cover',
                                             item.videoPhoneFrame && 'features-phone-frame',
                                         )}
                                         style={{ objectPosition: item.videoObjectPosition ?? 'center 45%' }}
