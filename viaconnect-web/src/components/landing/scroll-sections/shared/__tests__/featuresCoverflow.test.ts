@@ -614,7 +614,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(biology?.videoWebmSrc).toBe('/videos/features/biology-tracking.webm');
         expect(biology?.videoPosterSrc).toBe('/images/features/biology-tracking-poster.webp');
         expect(biology?.videoObjectPosition).toBe('center center');
-        expect(biology?.videoObjectFit).toBe('contain');
+        expect(biology?.videoObjectFit).toBe('cover');
         expect(biology?.videoPhoneFrame).toBeUndefined();
         expect(biology?.body).toBe(THREE_PORTAL_COPY.body);
 
@@ -636,8 +636,8 @@ describe('CoverFlowCarousel Features integration', () => {
             }),
         );
         const video = html.match(/data-testid="features-coverflow-video-three-portal"[^>]*>/)?.[0] ?? '';
-        expect(video).toContain('object-contain');
-        expect(video).not.toContain('object-cover');
+        expect(video).toContain('object-cover');
+        expect(video).not.toContain('object-contain');
         expect(video).toContain('object-position:center center');
         expect(video).not.toContain('features-phone-frame');
         expect(html.indexOf('features-coverflow-orbs-three-portal')).toBeGreaterThan(

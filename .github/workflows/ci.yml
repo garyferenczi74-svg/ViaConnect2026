@@ -66,6 +66,11 @@ jobs:
         # fails only on new schema-shaped type errors (TS2339/TS2345/TS2769/
         # TS2322 referencing Database row shapes) whose file+code pair is not
         # frozen in the legacy allowlist. All other type errors stay advisory.
+        # The default ~2GB heap OOMs this project (exit 134) on some runners.
+        # That is a crash, not a type error, so the gate fails closed. 4GB
+        # lets tsc finish and the allowlist decide.
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           npx tsc --noEmit > tsc-out.txt 2>&1 && rc=0 || rc=$?
           if [ "$rc" -gt 1 ]; then echo "tsc crashed with exit code $rc (not a type-error exit); failing the gate"; tail -20 tsc-out.txt; exit 1; fi
