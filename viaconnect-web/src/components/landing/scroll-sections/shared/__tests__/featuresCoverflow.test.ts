@@ -118,6 +118,7 @@ describe('landing Features coverflow data', () => {
                 expect(item.videoWebmSrc).toBe('/videos/features/daily-logging.webm');
                 expect(item.videoPosterSrc).toBe('/images/features/daily-logging-poster.webp');
                 expect(item.videoObjectPosition).toBe('center center');
+                expect(item.videoFit).toBe('contain');
             } else {
                 expect(item.imageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES[COVERFLOW_FEATURE_IDS[index]]);
                 expect(item.imageAlt).toBe(LOCKED_HEADLINES[index]);
@@ -455,7 +456,11 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('imageUnderGradient');
         expect(CAROUSEL).toContain('bg-cover bg-no-repeat');
         expect(CAROUSEL).not.toContain('features-coverflow-fill-');
-        expect(CAROUSEL).not.toContain('blur(28px)');
+        const photoBranch = CAROUSEL.slice(
+            CAROUSEL.indexOf(') : item.imageUnderGradient ? ('),
+            CAROUSEL.indexOf('{artFailed ? null : ('),
+        );
+        expect(photoBranch).not.toContain('blur(');
         expect(CAROUSEL).toContain("backgroundSize: 'cover'");
         expect(CAROUSEL).toContain('from-[#1A2744] via-[#224852] to-[#111827]');
         expect(CAROUSEL).toContain('rgba(26,39,68,0.34)');
@@ -488,6 +493,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(peptide?.videoWebmSrc).toBe('/videos/features/peptide-education.webm');
         expect(peptide?.videoPosterSrc).toBe('/images/features/peptide-education-poster.webp');
         expect(peptide?.videoObjectPosition).toBe('center 45%');
+        expect(peptide?.videoFit).toBeUndefined();
         expect(peptide?.body.toLowerCase()).not.toMatch(/semaglutide|retatrutide/);
         const withVideo = coverflowFeatureCards.filter((card) => card.videoMp4Src);
         expect(withVideo.map((card) => card.id)).toEqual(['daily-logging', 'peptide-protocols']);
@@ -530,7 +536,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('playsInline');
         expect(html).toContain('preload="metadata"');
         const videoTags = html.match(/<video\b[^>]*>/g) ?? [];
-        expect(videoTags).toHaveLength(2);
+        expect(videoTags).toHaveLength(3);
         for (const videoTag of videoTags) {
             expect(videoTag).not.toMatch(/\scontrols[\s=]/);
         }
@@ -553,6 +559,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(daily?.videoWebmSrc).toBe('/videos/features/daily-logging.webm');
         expect(daily?.videoPosterSrc).toBe('/images/features/daily-logging-poster.webp');
         expect(daily?.videoObjectPosition).toBe('center center');
+        expect(daily?.videoFit).toBe('contain');
         expect(daily?.underlayImageSrc).toBeUndefined();
 
         const mp4 = readFileSync(path.join(root, 'public/videos/features/daily-logging.mp4'));
@@ -569,5 +576,26 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('reduceMotion ?');
         expect(CAROUSEL).toContain('features-coverflow-poster-${item.id}');
         expect(CAROUSEL).toContain('prefersReducedMotion === false');
+        expect(CAROUSEL).toContain("item.videoFit === 'contain'");
+        expect(CAROUSEL).toContain('object-contain');
+        expect(CAROUSEL).toContain('blur(28px) brightness(0.82)');
+        expect(CAROUSEL).toContain('features-coverflow-video-fill-${item.id}');
+        expect(DESKTOP).toContain('card.videoFit');
+        expect(MOBILE).toContain('feature.videoFit');
+
+        const html = renderToStaticMarkup(
+            createElement(CoverFlowCarousel, {
+                items: coverflowFeatureCards.map(toCoverFlowFeatureItem),
+            }),
+        );
+        const dailyVideo = html.match(/data-testid="features-coverflow-video-daily-logging"[^>]*>/)?.[0] ?? '';
+        expect(dailyVideo).toContain('object-contain');
+        expect(dailyVideo).not.toContain('object-cover');
+        expect(html).toContain('features-coverflow-video-fill-daily-logging');
+        expect(html).toContain('blur(28px) brightness(0.82)');
+        expect(html).not.toContain('features-coverflow-video-fill-peptide-protocols');
+        const peptideVideo = html.match(/data-testid="features-coverflow-video-peptide-protocols"[^>]*>/)?.[0] ?? '';
+        expect(peptideVideo).toContain('object-cover');
+        expect(peptideVideo).toContain('object-position:center 45%');
     });
 });
