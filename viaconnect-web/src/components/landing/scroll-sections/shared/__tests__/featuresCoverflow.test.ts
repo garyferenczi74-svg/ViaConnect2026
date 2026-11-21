@@ -52,7 +52,7 @@ const LOCKED_HEADLINES = [
     'Daily Logging',
     'Wellness Analytics and Bio Optimization Score',
     'Peptide Education',
-    THREE_PORTAL_COPY.headline,
+    'Biology Tracking',
     'Medical and Herbal Interaction Engine',
     'Helix Rewards',
 ] as const;
@@ -89,7 +89,8 @@ describe('landing Features coverflow data', () => {
 
     it('keeps waitlist-honest Three-Portal copy on the carousel', () => {
         const threePortal = coverflowFeatureCards.find((card) => card.id === 'three-portal');
-        expect(threePortal?.headline).toBe(THREE_PORTAL_COPY.headline);
+        expect(threePortal?.headline).toBe('Biology Tracking');
+        expect(threePortal?.headline).not.toBe(THREE_PORTAL_COPY.headline);
         expect(threePortal?.teaser).toBe(THREE_PORTAL_COPY.teaser);
         expect(threePortal?.body).toBe(THREE_PORTAL_COPY.body);
         expect(threePortal?.body).toMatch(/Q1 2027/);
@@ -496,7 +497,11 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(peptide?.videoPhoneFrame).toBeUndefined();
         expect(peptide?.body.toLowerCase()).not.toMatch(/semaglutide|retatrutide/);
         const withVideo = coverflowFeatureCards.filter((card) => card.videoMp4Src);
-        expect(withVideo.map((card) => card.id)).toEqual(['daily-logging', 'peptide-protocols']);
+        expect(withVideo.map((card) => card.id)).toEqual([
+            'daily-logging',
+            'peptide-protocols',
+            'three-portal',
+        ]);
 
         const mp4 = readFileSync(path.join(root, 'public/videos/features/peptide-education.mp4'));
         const webm = readFileSync(path.join(root, 'public/videos/features/peptide-education.webm'));
@@ -536,7 +541,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('playsInline');
         expect(html).toContain('preload="metadata"');
         const videoTags = html.match(/<video\b[^>]*>/g) ?? [];
-        expect(videoTags).toHaveLength(2);
+        expect(videoTags).toHaveLength(3);
         for (const videoTag of videoTags) {
             expect(videoTag).not.toMatch(/\scontrols[\s=]/);
         }
@@ -548,6 +553,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).toContain('daily-logging.mp4');
         expect(html).toContain('daily-logging.webm');
         expect(html).toContain('daily-logging-poster.webp');
+        expect(html).toContain('features-coverflow-video-three-portal');
+        expect(html).toContain('biology-tracking.mp4');
         expect(html).not.toContain('features-coverflow-video-wellness-analytics');
         expect(html).not.toContain('features-coverflow-video-genomic-testing');
     });
@@ -579,7 +586,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('features-phone-frame');
         expect(CAROUSEL).toContain('height: 132% !important');
         expect(CAROUSEL).not.toContain('blur(28px)');
-        expect(CAROUSEL).not.toContain('object-contain');
+        expect(CAROUSEL).toContain("item.videoObjectFit === 'contain' ? 'object-contain' : 'object-cover'");
         expect(DESKTOP).toContain('card.videoPhoneFrame');
         expect(MOBILE).toContain('feature.videoPhoneFrame');
 
@@ -595,7 +602,48 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).not.toContain('features-coverflow-video-fill-daily-logging');
         const peptideVideo = html.match(/data-testid="features-coverflow-video-peptide-protocols"[^>]*>/)?.[0] ?? '';
         expect(peptideVideo).toContain('object-cover');
+        expect(peptideVideo).not.toContain('object-contain');
         expect(peptideVideo).not.toContain('features-phone-frame');
         expect(peptideVideo).toContain('object-position:center 45%');
+    });
+
+    it('keeps the Biology Tracking body fully inside the card', () => {
+        const biology = coverflowFeatureCards.find((card) => card.id === 'three-portal');
+        expect(biology?.headline).toBe('Biology Tracking');
+        expect(biology?.videoMp4Src).toBe('/videos/features/biology-tracking.mp4');
+        expect(biology?.videoWebmSrc).toBe('/videos/features/biology-tracking.webm');
+        expect(biology?.videoPosterSrc).toBe('/images/features/biology-tracking-poster.webp');
+        expect(biology?.videoObjectPosition).toBe('center center');
+        expect(biology?.videoObjectFit).toBe('contain');
+        expect(biology?.videoPhoneFrame).toBeUndefined();
+        expect(biology?.body).toBe(THREE_PORTAL_COPY.body);
+
+        const mp4 = readFileSync(path.join(root, 'public/videos/features/biology-tracking.mp4'));
+        const webm = readFileSync(path.join(root, 'public/videos/features/biology-tracking.webm'));
+        const poster = readFileSync(path.join(root, 'public/images/features/biology-tracking-poster.webp'));
+        expect(mp4.subarray(4, 8).toString('ascii')).toBe('ftyp');
+        expect([...webm.subarray(0, 4)]).toEqual([0x1a, 0x45, 0xdf, 0xa3]);
+        expect(poster.subarray(0, 4).toString('ascii')).toBe('RIFF');
+        expect(poster.subarray(8, 12).toString('ascii')).toBe('WEBP');
+        for (const bytes of [mp4, webm, poster]) {
+            expect(bytes.length).toBeGreaterThan(8_000);
+            expect(bytes.length).toBeLessThan(3_000_000);
+        }
+
+        const html = renderToStaticMarkup(
+            createElement(CoverFlowCarousel, {
+                items: coverflowFeatureCards.map(toCoverFlowFeatureItem),
+            }),
+        );
+        const video = html.match(/data-testid="features-coverflow-video-three-portal"[^>]*>/)?.[0] ?? '';
+        expect(video).toContain('object-contain');
+        expect(video).not.toContain('object-cover');
+        expect(video).toContain('object-position:center center');
+        expect(video).not.toContain('features-phone-frame');
+        expect(html.indexOf('features-coverflow-orbs-three-portal')).toBeGreaterThan(
+            html.indexOf('features-coverflow-video-three-portal'),
+        );
+        expect(DESKTOP).toContain('card.videoObjectFit');
+        expect(MOBILE).toContain('feature.videoObjectFit');
     });
 });

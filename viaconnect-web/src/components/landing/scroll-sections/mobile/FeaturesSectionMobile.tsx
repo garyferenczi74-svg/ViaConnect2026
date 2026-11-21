@@ -46,6 +46,7 @@ export function FeaturesSectionMobile() {
                         videoWebmSrc: feature.videoWebmSrc,
                         videoPosterSrc: feature.videoPosterSrc,
                         videoObjectPosition: feature.videoObjectPosition,
+                        videoObjectFit: feature.videoObjectFit,
                         videoPhoneFrame: feature.videoPhoneFrame,
                     }))}
                 />

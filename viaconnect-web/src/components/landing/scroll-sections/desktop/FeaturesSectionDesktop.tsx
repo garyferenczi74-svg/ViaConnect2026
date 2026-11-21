@@ -58,6 +58,7 @@ export function FeaturesSectionDesktop() {
                         videoWebmSrc: card.videoWebmSrc,
                         videoPosterSrc: card.videoPosterSrc,
                         videoObjectPosition: card.videoObjectPosition,
+                        videoObjectFit: card.videoObjectFit,
                         videoPhoneFrame: card.videoPhoneFrame,
                     }))}
                 />
