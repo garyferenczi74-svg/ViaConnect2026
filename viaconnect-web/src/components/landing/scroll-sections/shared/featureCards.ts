@@ -79,6 +79,10 @@ export const featureCards: FeatureCard[] = [
         teaser: 'Log meals and body changes in seconds',
         body: 'Log meals, track your body, see the connection Snap photos for instant macros and micronutrients, track weight, composition, measurements, and progress photos, all plotted against your protocol so you see exactly what is working',
         placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['daily-logging'],
+        videoMp4Src: '/videos/features/daily-logging.mp4',
+        videoWebmSrc: '/videos/features/daily-logging.webm',
+        videoPosterSrc: '/images/features/daily-logging-poster.webp',
+        videoObjectPosition: 'center center',
     },
     {
         id: 'wellness-analytics',
