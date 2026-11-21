@@ -27,8 +27,8 @@ export interface FeatureCard {
     videoWebmSrc?: string
     videoPosterSrc?: string
     videoObjectPosition?: string
-    /** cover crops the frame. contain keeps every pixel, with a blurred fill behind. */
-    videoFit?: 'cover' | 'contain'
+    /** Portrait clip: below 640px, shrink the cover so the phone stays whole. */
+    videoPhoneFrame?: boolean
 }
 
 export const COVERFLOW_FEATURE_IDS = [
@@ -85,7 +85,7 @@ export const featureCards: FeatureCard[] = [
         videoWebmSrc: '/videos/features/daily-logging.webm',
         videoPosterSrc: '/images/features/daily-logging-poster.webp',
         videoObjectPosition: 'center center',
-        videoFit: 'contain',
+        videoPhoneFrame: true,
     },
     {
         id: 'wellness-analytics',
@@ -157,6 +157,6 @@ export function toCoverFlowFeatureItem(card: FeatureCard) {
         videoWebmSrc: card.videoWebmSrc,
         videoPosterSrc: card.videoPosterSrc,
         videoObjectPosition: card.videoObjectPosition,
-        videoFit: card.videoFit,
+        videoPhoneFrame: card.videoPhoneFrame,
     }
 }
